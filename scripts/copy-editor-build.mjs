@@ -5,7 +5,14 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const distDir = path.join(root, 'dist');
 const editorDir = path.join(distDir, 'docs', 'editor');
-const editorFiles = ['index.html', 'manifest.webmanifest', 'service-worker.js'];
+const editorFiles = [
+  'index.html',
+  'manifest.webmanifest',
+  'pwa-icon-192.png',
+  'pwa-icon-512.png',
+  'pwa-maskable-512.png',
+  'service-worker.js'
+];
 
 await mkdir(editorDir, { recursive: true });
 

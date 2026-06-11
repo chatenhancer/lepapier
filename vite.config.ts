@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { extname } from 'node:path';
 import type { OutputAsset, OutputBundle, OutputChunk } from 'rollup';
+import sharp from 'sharp';
 import { defineConfig, type Plugin } from 'vite';
 
 type PackageMetadata = {
@@ -14,14 +15,15 @@ const packageMetadata = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url), 'utf8')
 ) as PackageMetadata;
 const buildTimestamp = new Date().toISOString();
-const pwaCompanionFiles = new Set(['manifest.webmanifest', 'service-worker.js']);
+const pwaIconFiles = ['pwa-icon-192.png', 'pwa-icon-512.png', 'pwa-maskable-512.png'];
+const pwaCompanionFiles = new Set(['manifest.webmanifest', 'service-worker.js', ...pwaIconFiles]);
 
 function portableHtmlBuildPlugin(): Plugin {
   return {
     name: 'lepapier-portable-html-build',
     apply: 'build',
     enforce: 'post',
-    generateBundle(_options, bundle) {
+    async generateBundle(_options, bundle) {
       const htmlAsset = Object.values(bundle).find(
         (entry): entry is OutputAsset => entry.type === 'asset' && entry.fileName === 'index.html'
       );
@@ -41,7 +43,7 @@ function portableHtmlBuildPlugin(): Plugin {
       html = prependBuildMetadata(minifyPortableHtml(html));
 
       htmlAsset.source = html;
-      addPwaCompanionAssets(bundle);
+      await addPwaCompanionAssets(bundle);
 
       for (const fileName of Object.keys(bundle)) {
         if (fileName !== htmlAsset.fileName && !pwaCompanionFiles.has(fileName)) {
@@ -192,12 +194,28 @@ function prependBuildMetadata(html: string): string {
   return `<!--\n${metadata.join('\n')}\n-->\n${html}`;
 }
 
-function addPwaCompanionAssets(bundle: OutputBundle): void {
+async function addPwaCompanionAssets(bundle: OutputBundle): Promise<void> {
   addTextAsset(bundle, 'manifest.webmanifest', createWebManifest());
   addTextAsset(bundle, 'service-worker.js', createServiceWorker());
+  addBinaryAsset(bundle, 'pwa-icon-192.png', await createPwaIconPng(192, 0.86));
+  addBinaryAsset(bundle, 'pwa-icon-512.png', await createPwaIconPng(512, 0.86));
+  addBinaryAsset(bundle, 'pwa-maskable-512.png', await createPwaIconPng(512, 0.72));
 }
 
 function addTextAsset(bundle: OutputBundle, fileName: string, source: string): void {
+  bundle[fileName] = {
+    type: 'asset',
+    fileName,
+    name: undefined,
+    originalFileName: null,
+    source,
+    needsCodeReference: false,
+    names: [],
+    originalFileNames: []
+  };
+}
+
+function addBinaryAsset(bundle: OutputBundle, fileName: string, source: Uint8Array): void {
   bundle[fileName] = {
     type: 'asset',
     fileName,
@@ -223,10 +241,22 @@ function createWebManifest(): string {
     theme_color: '#ffffff',
     icons: [
       {
-        src: fileToDataUri(new URL('./public/assets/icons/lepapier.svg', import.meta.url)),
-        sizes: 'any',
-        type: 'image/svg+xml',
-        purpose: 'any maskable'
+        src: 'pwa-icon-192.png',
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'any'
+      },
+      {
+        src: 'pwa-icon-512.png',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'any'
+      },
+      {
+        src: 'pwa-maskable-512.png',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'maskable'
       }
     ]
   })}\n`;
@@ -234,7 +264,7 @@ function createWebManifest(): string {
 
 function createServiceWorker(): string {
   const cacheName = `lepapier-${packageMetadata.version}-${buildTimestamp}`;
-  const appShell = ['./', 'index.html', 'manifest.webmanifest'];
+  const appShell = ['./', 'index.html', 'manifest.webmanifest', ...pwaIconFiles];
 
   return minifyGeneratedScript(`
 const CACHE_NAME=${JSON.stringify(cacheName)};
@@ -307,6 +337,29 @@ function fileToDataUri(fileUrl: URL): string {
   const mediaType = mediaTypeForPath(fileUrl.pathname);
   const data = readFileSync(fileUrl).toString('base64');
   return `data:${mediaType};base64,${data}`;
+}
+
+async function createPwaIconPng(size: number, scale: number): Promise<Uint8Array> {
+  const iconSize = Math.round(size * scale);
+  const icon = await sharp(readFileSync(new URL('./public/assets/icons/lepapier.svg', import.meta.url)))
+    .resize(iconSize, iconSize, {
+      background: { r: 255, g: 255, b: 255, alpha: 0 },
+      fit: 'contain'
+    })
+    .png()
+    .toBuffer();
+
+  return sharp({
+    create: {
+      width: size,
+      height: size,
+      channels: 4,
+      background: { r: 255, g: 255, b: 255, alpha: 1 }
+    }
+  })
+    .composite([{ input: icon, gravity: 'center' }])
+    .png()
+    .toBuffer();
 }
 
 function mediaTypeForPath(filePath: string): string {
