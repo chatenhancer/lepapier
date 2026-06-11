@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import packageJson from '../../../package.json' with { type: 'json' };
 import {
   createBugReportDetails,
   getDocumentSelectionRange
@@ -20,15 +21,17 @@ describe('editor interactions helpers', () => {
   });
 
   it('creates useful bug report details for clipboard copying', () => {
+    const displayVersion = `lepapier.app v${packageJson.version}`;
+
     expect(createBugReportDetails({
       buildTimestamp: '2026-06-11T12:00:00.000Z',
-      displayVersion: 'lepapier.app v0.1.0',
+      displayVersion,
       pageHref: 'https://lepapier.app/editor/',
       releaseNotesHref: 'https://github.com/chatenhancer/lepapier/releases',
       userAgent: 'Vitest'
     })).toBe([
       'Lepapier bug report',
-      'Version: lepapier.app v0.1.0',
+      `Version: ${displayVersion}`,
       'Build date: 2026-06-11T12:00:00.000Z',
       'Release notes: https://github.com/chatenhancer/lepapier/releases',
       'App URL: https://lepapier.app/editor/',
