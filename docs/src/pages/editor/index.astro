@@ -1,0 +1,10 @@
+---
+const editorDevUrl = import.meta.env.PUBLIC_EDITOR_DEV_URL || 'http://127.0.0.1:5173/';
+
+if (import.meta.env.DEV) {
+  return Astro.redirect(editorDevUrl);
+}
+---
+
+<meta http-equiv="refresh" content="0;url=/">
+<a href="/">Return to Lepapier</a>
