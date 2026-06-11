@@ -1,9 +1,12 @@
 export interface ThemeAppConfig {
+  buildTooltip: string;
   homeHref: string;
   iconSrc: string;
+  displayVersion: string;
   logoDarkSrc: string;
   logoSrc: string;
   name: string;
+  releaseNotesHref: string;
 }
 
 export interface ThemeControllerOptions {
@@ -95,6 +98,16 @@ function applyAppConfig(appConfig: ThemeAppConfig, documentTarget: Document): vo
   const brandLogos = documentTarget.querySelectorAll<HTMLImageElement>('[data-app-logo]');
   for (const brandLogo of brandLogos) {
     brandLogo.setAttribute('alt', '');
+  }
+  for (const versionElement of documentTarget.querySelectorAll('[data-app-version]')) {
+    versionElement.textContent = appConfig.displayVersion;
+  }
+  for (const buildTooltipElement of documentTarget.querySelectorAll<HTMLElement>('[data-app-build-tooltip]')) {
+    buildTooltipElement.dataset.tooltip = appConfig.buildTooltip;
+    buildTooltipElement.setAttribute('aria-label', `${appConfig.displayVersion}. ${appConfig.buildTooltip}`);
+  }
+  for (const releaseNotesLink of documentTarget.querySelectorAll<HTMLAnchorElement>('[data-app-release-notes]')) {
+    releaseNotesLink.href = appConfig.releaseNotesHref;
   }
   updateThemeLogo(appConfig, documentTarget);
 }

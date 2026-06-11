@@ -351,6 +351,9 @@ export default defineConfig({
     },
     sourcemap: false
   },
+  define: {
+    __LEPAPIER_BUILD_TIMESTAMP__: JSON.stringify(buildTimestamp)
+  },
   plugins: [portableHtmlBuildPlugin()],
   preview: {
     host: '127.0.0.1'

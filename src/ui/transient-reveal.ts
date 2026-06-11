@@ -7,6 +7,7 @@ export interface TransientRevealController {
 export interface TransientRevealOptions {
   asleepClassName?: string | null;
   awakeClassName?: string;
+  defaultDelay?: number;
   elements: HTMLElement[];
   shouldStayRevealed?(): boolean;
   windowTarget?: Window;
@@ -15,6 +16,7 @@ export interface TransientRevealOptions {
 export function createTransientReveal({
   asleepClassName = 'is-asleep',
   awakeClassName = 'is-awake',
+  defaultDelay = 2800,
   elements,
   shouldStayRevealed = () => elements.some((element) => element.matches(':hover, :focus-within')),
   windowTarget = window
@@ -31,7 +33,7 @@ export function createTransientReveal({
     }
   };
 
-  const scheduleFade = (delay = 1800) => {
+  const scheduleFade = (delay = defaultDelay) => {
     windowTarget.clearTimeout(revealTimeout);
     revealTimeout = windowTarget.setTimeout(() => {
       if (shouldStayRevealed()) return;
@@ -44,7 +46,7 @@ export function createTransientReveal({
     }, delay);
   };
 
-  const revealTemporarily = (delay = 1800) => {
+  const revealTemporarily = (delay = defaultDelay) => {
     reveal();
     scheduleFade(delay);
   };

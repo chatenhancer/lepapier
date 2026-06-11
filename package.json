@@ -8,12 +8,22 @@
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
+    "docs:dev": "astro dev --config astro.docs.config.mjs --host 127.0.0.1 --force",
+    "docs:build": "npm run docs:social-card && astro build --config astro.docs.config.mjs --force",
+    "docs:preview": "npm run docs:build && astro preview --config astro.docs.config.mjs --host 127.0.0.1",
+    "docs:social-card": "node scripts/generate-social-card.mjs",
+    "pages:build": "npm run build && npm run docs:build && node scripts/copy-editor-build.mjs",
+    "release:validate-tag": "node scripts/validate-release-tag.mjs",
+    "release:zip": "node scripts/create-release-zip.mjs",
     "check": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "verify": "npm run check && npm test"
   },
-  "dependencies": {},
   "devDependencies": {
+    "@fontsource/geist": "^5.2.9",
     "@types/node": "^25.9.1",
+    "astro": "^6.4.6",
+    "sharp": "^0.34.5",
     "typescript": "^5.8.3",
     "vite": "^7.3.2",
     "vitest": "^4.1.7"

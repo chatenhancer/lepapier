@@ -75,7 +75,10 @@ import {
   type EditorFieldElement,
   type EditorFieldName
 } from './bindings/elements';
-import { setupEditorInteractions } from './bindings/interactions';
+import {
+  createBugReportDetails,
+  setupEditorInteractions
+} from './bindings/interactions';
 import { createEditorDownloadWorkflow } from './workflows/download';
 import {
   createEditorExportAssetWorkflow
@@ -110,6 +113,7 @@ export function startEditorController(): void {
     aiRegenerateButtons,
     aiStatus,
     bodyInput,
+    bugReportCopyButton,
     copyMarkdownButton,
     coverPath,
     coverPicker,
@@ -433,9 +437,9 @@ export function startEditorController(): void {
   preview.addEventListener('pointerdown', handlePreviewPointerDown);
 
   editorLayout.updateToolbarScrollState();
-  documentsSidebarReveal.revealTemporarily(2400);
-  sidebarReveal.revealTemporarily(2400);
-  toolbarReveal.revealTemporarily(2400);
+  documentsSidebarReveal.revealTemporarily();
+  sidebarReveal.revealTemporarily();
+  toolbarReveal.revealTemporarily();
   window.addEventListener('scroll', editorLayout.updateToolbarScrollState, { passive: true });
   window.addEventListener('pointermove', handleSheetEdgePointerMove);
   window.addEventListener('blur', paperResize.clearVisibility);
@@ -458,6 +462,16 @@ export function startEditorController(): void {
     addDocumentButton,
     addImageFile: mediaWorkflow.addImageFile,
     bodyInput,
+    bugReportCopyButton,
+    buildBugReportDetails() {
+      return createBugReportDetails({
+        buildTimestamp: appConfig.buildTimestamp,
+        displayVersion: appConfig.displayVersion,
+        pageHref: window.location.href,
+        releaseNotesHref: appConfig.releaseNotesHref,
+        userAgent: navigator.userAgent
+      });
+    },
     buildMarkdown,
     closeMobilePanels: () => {
       mobilePanels.close();

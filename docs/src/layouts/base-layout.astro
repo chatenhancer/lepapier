@@ -1,0 +1,67 @@
+---
+import '../styles/site.css';
+
+const siteUrl = 'https://lepapier.app';
+const siteName = 'Lepapier';
+const defaultDescription = 'Lepapier is the Markdown editor with no distractions.';
+const socialImage = `${siteUrl}/assets/social-card.png`;
+const {
+  description = defaultDescription,
+  title = siteName
+} = Astro.props as {
+  description?: string;
+  title?: string;
+};
+const canonicalUrl = new URL(Astro.url.pathname, siteUrl).toString();
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: siteName,
+  applicationCategory: 'ProductivityApplication',
+  operatingSystem: 'Web',
+  description,
+  url: siteUrl,
+  image: socialImage,
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD'
+  }
+};
+const structuredDataJson = JSON.stringify(structuredData).replace(/</g, '\\u003c');
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{title}</title>
+    <meta name="description" content={description}>
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="canonical" href={canonicalUrl}>
+    <meta property="og:title" content={title}>
+    <meta property="og:description" content={description}>
+    <meta property="og:type" content="website">
+    <meta property="og:url" content={canonicalUrl}>
+    <meta property="og:site_name" content={siteName}>
+    <meta property="og:image" content={socialImage}>
+    <meta property="og:image:secure_url" content={socialImage}>
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Lepapier paper stack logo with the line: no distractions.">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content={title}>
+    <meta name="twitter:description" content={description}>
+    <meta name="twitter:image" content={socialImage}>
+    <meta name="twitter:image:alt" content="Lepapier paper stack logo with the line: no distractions.">
+    <link rel="icon" href="/assets/icons/lepapier.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icons/lepapier.svg">
+    <script type="application/ld+json" set:html={structuredDataJson}></script>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

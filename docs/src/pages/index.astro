@@ -1,0 +1,62 @@
+---
+import BaseLayout from '../layouts/base-layout.astro';
+
+const docsItems = [
+  {
+    title: 'Write locally',
+    body: 'Draft Markdown in the browser with saved local drafts and no account, sync, or server in the way.'
+  },
+  {
+    title: 'Bring files in',
+    body: 'Open a Markdown file or a folder of Markdown files, then keep working with local file handles where the browser supports them.'
+  },
+  {
+    title: 'Preview and refine',
+    body: 'Use the live preview to edit text, adjust images, and keep frontmatter ready for static site publishing.'
+  },
+  {
+    title: 'Export cleanly',
+    body: 'Download a single Markdown file or bundle documents and image assets as a portable zip archive.'
+  }
+];
+---
+
+<BaseLayout>
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-inner">
+        <img class="hero-logo" src="/assets/icons/lepapier.svg" width="524" height="584" alt="" decoding="async">
+
+        <div class="hero-copy">
+          <h1 id="hero-title"><strong>Lepapier</strong> is the markdown editor with <strong>no distractions.</strong></h1>
+          <p>We said <strong>no distractions.</strong></p>
+          <p>Get back to work.</p>
+        </div>
+
+        <a class="hero-cta" href="/editor/" aria-label="Start writing with Lepapier">Start writing</a>
+
+        <p class="hero-docs-link">
+          If you do want to distract yourself, here&rsquo;s the <a href="#documentation">documentation</a>
+        </p>
+      </div>
+    </section>
+
+    <section id="documentation" class="docs-section" aria-labelledby="documentation-title">
+      <div class="docs-inner">
+        <div class="docs-heading">
+          <p class="docs-kicker">Documentation</p>
+          <h2 id="documentation-title">A short map of what Lepapier does.</h2>
+        </div>
+
+        <div class="docs-grid">
+          {docsItems.map((item) => (
+            <article class="docs-card">
+              <h3>{item.title}</h3>
+              <p>{item.body}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  </main>
+</BaseLayout>

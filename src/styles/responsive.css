@@ -147,7 +147,15 @@
   }
 
   .documents-sidebar .document-list-shell {
+    margin-top: 2px;
     max-height: min(56vh, 390px);
+  }
+
+  .documents-sidebar .document-select-all {
+    min-height: 24px;
+    width: 100%;
+    margin: 2px 0 6px;
+    padding-left: 9px;
   }
 
   .documents-sidebar .document-list {

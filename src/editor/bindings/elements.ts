@@ -9,6 +9,7 @@ export interface EditorElements {
   aiRegenerateButtons: HTMLButtonElement[];
   aiStatus: HTMLElement;
   bodyInput: HTMLTextAreaElement;
+  bugReportCopyButton: HTMLButtonElement;
   copyMarkdownButton: HTMLButtonElement;
   coverPath: HTMLElement;
   coverPicker: HTMLInputElement;
@@ -61,6 +62,7 @@ export function getEditorElements(): EditorElements {
     aiRegenerateButtons: queryElements<HTMLButtonElement>('[data-ai-regenerate]'),
     aiStatus: requireElement<HTMLElement>('[data-ai-status]'),
     bodyInput: requireElement<HTMLTextAreaElement>('[data-field="body"]'),
+    bugReportCopyButton: requireElement<HTMLButtonElement>('[data-copy-bug-report]'),
     copyMarkdownButton: requireElement<HTMLButtonElement>('[data-copy]'),
     coverPath: requireElement<HTMLElement>('[data-cover-path]'),
     coverPicker: requireElement<HTMLInputElement>('[data-cover-picker]'),

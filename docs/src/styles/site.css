@@ -1,0 +1,241 @@
+@import "@fontsource/geist/latin-400.css";
+@import "@fontsource/geist/latin-600.css";
+@import "@fontsource/geist/latin-700.css";
+@import "@fontsource/geist/latin-800.css";
+
+:root {
+  color-scheme: light;
+  --background: #ffffff;
+  --text: #000000;
+  --muted: #676767;
+  --soft-text: #565656;
+  --line: #e8e8e8;
+  --soft: #f7f7f7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--background);
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--text);
+  font-family: "Geist", Arial, sans-serif;
+  line-height: 1.2;
+  text-rendering: geometricPrecision;
+}
+
+a {
+  color: inherit;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+.hero {
+  display: grid;
+  min-height: 100svh;
+  place-items: center;
+  padding: clamp(56px, 8vh, 124px) 24px clamp(48px, 7vh, 92px);
+}
+
+.hero-inner {
+  display: grid;
+  width: min(100%, 1240px);
+  justify-items: center;
+  text-align: center;
+}
+
+.hero-logo {
+  width: clamp(140px, 11.2vw, 236px);
+  height: auto;
+  margin-bottom: clamp(70px, 7.4vh, 104px);
+}
+
+.hero-copy {
+  display: grid;
+  justify-items: center;
+  gap: clamp(40px, 5.1vh, 68px);
+}
+
+.hero-copy h1,
+.hero-copy p {
+  margin: 0;
+  font-size: clamp(31px, 1.86vw, 48px);
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.16;
+}
+
+.hero-copy h1 {
+  max-width: 1480px;
+}
+
+.hero-copy p {
+  max-width: 760px;
+}
+
+.hero-copy strong {
+  font-weight: 800;
+}
+
+.hero-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: min(100%, clamp(320px, 24vw, 576px));
+  min-height: clamp(76px, 6.7vh, 96px);
+  margin-top: clamp(70px, 7.1vh, 100px);
+  padding: 14px 36px;
+  border: 2px solid #000000;
+  border-radius: 999px;
+  background: #000000;
+  color: #ffffff;
+  font-size: clamp(24px, 1.45vw, 36px);
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  transition: background-color 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.hero-cta:hover,
+.hero-cta:focus-visible {
+  background: #ffffff;
+  color: #000000;
+}
+
+.hero-cta:active {
+  transform: translateY(1px);
+}
+
+.hero-docs-link {
+  margin: clamp(78px, 8.4vh, 116px) 0 0;
+  color: var(--soft-text);
+  font-size: clamp(20px, 1.28vw, 32px);
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.3;
+}
+
+.hero-docs-link a {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+.docs-section {
+  padding: 112px 24px 128px;
+  border-top: 1px solid var(--line);
+  background: var(--soft);
+  scroll-margin-top: 24px;
+}
+
+.docs-inner {
+  width: min(100%, 1080px);
+  margin: 0 auto;
+}
+
+.docs-heading {
+  max-width: 720px;
+  margin-bottom: 38px;
+}
+
+.docs-kicker {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.docs-heading h2 {
+  margin: 0;
+  font-size: clamp(34px, 4vw, 58px);
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.02;
+}
+
+.docs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.docs-card {
+  min-height: 210px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.docs-card h3 {
+  margin: 0 0 16px;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.docs-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+@media (max-width: 760px) {
+  .hero {
+    align-items: start;
+    min-height: 100svh;
+    padding: 54px 20px 44px;
+  }
+
+  .hero-logo {
+    width: 138px;
+    margin-bottom: 64px;
+  }
+
+  .hero-copy {
+    gap: 38px;
+  }
+
+  .hero-copy h1,
+  .hero-copy p {
+    font-size: clamp(30px, 8.8vw, 42px);
+    line-height: 1.14;
+  }
+
+  .hero-cta {
+    width: min(100%, 360px);
+    min-height: 70px;
+    margin-top: 62px;
+    font-size: 23px;
+  }
+
+  .hero-docs-link {
+    max-width: 360px;
+    margin-top: 64px;
+    font-size: 20px;
+  }
+
+  .docs-section {
+    padding: 72px 20px 88px;
+  }
+
+  .docs-grid {
+    grid-template-columns: 1fr;
+  }
+}

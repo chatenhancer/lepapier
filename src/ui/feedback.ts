@@ -3,7 +3,14 @@ export interface SaveStateFeedback {
 }
 
 export interface CopyButtonFeedback {
-  show(button: HTMLButtonElement): void;
+  show(button: HTMLButtonElement, options?: CopyButtonFeedbackOptions): void;
+}
+
+export interface CopyButtonFeedbackOptions {
+  copiedLabel?: string;
+  copiedTitle?: string;
+  defaultLabel?: string;
+  defaultTitle?: string;
 }
 
 export function createSaveStateFeedback({
@@ -43,16 +50,21 @@ export function createCopyButtonFeedback({
   let feedbackTimeout = 0;
 
   return {
-    show(button) {
+    show(button, {
+      copiedLabel = 'Copied generated markdown',
+      copiedTitle = 'Copied',
+      defaultLabel = 'Copy generated markdown',
+      defaultTitle = 'Copy'
+    } = {}) {
       windowTarget.clearTimeout(feedbackTimeout);
       button.classList.add('is-copied');
-      button.setAttribute('aria-label', 'Copied generated markdown');
-      button.title = 'Copied';
+      button.setAttribute('aria-label', copiedLabel);
+      button.title = copiedTitle;
 
       feedbackTimeout = windowTarget.setTimeout(() => {
         button.classList.remove('is-copied');
-        button.setAttribute('aria-label', 'Copy generated markdown');
-        button.title = 'Copy';
+        button.setAttribute('aria-label', defaultLabel);
+        button.title = defaultTitle;
       }, feedbackMs);
     }
   };

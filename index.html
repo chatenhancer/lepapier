@@ -224,7 +224,7 @@
               <h3 id="ai-title">Metadata helper</h3>
             </div>
             <p class="helper">
-              Uses Chrome built-in AI when available. The model runs locally after Chrome installs it.
+              Uses Chrome's built-in AI for local metadata suggestions when the model is available.
             </p>
             <button class="secondary-button" type="button" data-ai-enable hidden>Retry metadata helper</button>
             <p class="ai-status" data-ai-status>Write text, then use field refresh buttons for metadata.</p>
@@ -262,6 +262,20 @@
             </summary>
             <pre class="markdown-output" data-output></pre>
           </details>
+          <footer class="app-meta">
+            <p class="app-version" data-app-version data-app-build-tooltip>lepapier.app v0.1.0</p>
+            <div class="app-meta-actions">
+              <a class="app-release-link" href="https://github.com/chatenhancer/lepapier/releases" target="_blank" rel="noreferrer" data-app-release-notes>Release notes</a>
+              <button class="app-copy-button" type="button" data-copy-bug-report aria-label="Copy bug report details" title="Copy bug report details">
+                <svg class="output-copy-icon" viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                  <path d="M7 4a3 3 0 0 1 3-3h7a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-1v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3h1V4Zm2 1h4a3 3 0 0 1 3 3v7h1a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1h-7a1 1 0 0 0-1 1v1ZM6 7a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1H6Z"></path>
+                </svg>
+                <svg class="output-copy-check" viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                  <path d="M9.2 16.6 4.9 12.3a1 1 0 0 0-1.4 1.4l5 5a1 1 0 0 0 1.4 0l10.6-10.6a1 1 0 0 0-1.4-1.4L9.2 16.6Z"></path>
+                </svg>
+              </button>
+            </div>
+          </footer>
         </div>
       </aside>
     </main>

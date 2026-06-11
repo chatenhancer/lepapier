@@ -76,19 +76,22 @@
 }
 
 .document-count {
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 15px;
-  min-height: 13px;
+  min-width: 22px;
+  height: 15px;
   padding: 0 4px;
   border: 1px solid color-mix(in srgb, var(--control) 10%, transparent);
   border-radius: 999px;
   background: color-mix(in srgb, var(--control) 3%, transparent);
   color: var(--muted);
+  font-variant-numeric: tabular-nums;
   font-size: 9px;
   font-weight: 540;
   line-height: 1;
+  transform: translateY(2px);
 }
 
 .documents-heading-actions {
@@ -153,8 +156,8 @@
 }
 
 .document-select-all input[type="checkbox"] {
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
   margin: 0;
 }
 
@@ -190,6 +193,8 @@
 
 .document-select {
   grid-column: 1;
+  width: 15px;
+  height: 15px;
   margin: 0 0 0 5px;
 }
 

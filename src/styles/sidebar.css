@@ -80,6 +80,73 @@ body.is-resizing-sheet .sidebar {
   margin-top: 28px;
 }
 
+.app-meta {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  margin: 22px 0 0;
+  text-align: center;
+}
+
+.app-version {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.app-meta-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.app-release-link {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  text-decoration-color: color-mix(in srgb, currentColor 44%, transparent);
+  text-underline-offset: 3px;
+}
+
+.app-release-link:hover,
+.app-release-link:focus-visible {
+  color: var(--ink);
+}
+
+.app-copy-button {
+  display: inline-grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.app-copy-button:hover,
+.app-copy-button:focus-visible {
+  background: var(--control-hover);
+  color: var(--ink);
+}
+
+.app-copy-button.is-copied {
+  background: var(--primary);
+  color: var(--accent-ink);
+}
+
+.app-copy-button svg {
+  grid-area: 1 / 1;
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
+}
+
 .section-heading h3 {
   margin: 0;
   color: var(--control-muted);

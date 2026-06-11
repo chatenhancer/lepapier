@@ -10,6 +10,8 @@ export interface EditorInteractionOptions {
   addDocumentButton: HTMLButtonElement;
   addImageFile(file: File): unknown;
   bodyInput: HTMLTextAreaElement;
+  bugReportCopyButton: HTMLButtonElement;
+  buildBugReportDetails(): string;
   buildMarkdown(): string;
   closeMobilePanels(): void;
   copyFeedbackMs: number;
@@ -67,6 +69,8 @@ export function setupEditorInteractions({
   addDocumentButton,
   addImageFile,
   bodyInput,
+  bugReportCopyButton,
+  buildBugReportDetails,
   buildMarkdown,
   closeMobilePanels,
   copyFeedbackMs,
@@ -143,9 +147,27 @@ export function setupEditorInteractions({
   copyMarkdownButton.addEventListener('click', async (event) => {
     event.preventDefault();
     event.stopPropagation();
-    await navigator.clipboard.writeText(buildMarkdown());
+    const copied = await copyTextToClipboard(buildMarkdown());
+    if (!copied) {
+      showSaveState('Copy unavailable');
+      return;
+    }
     showCopyFeedback(copyMarkdownButton);
     showSaveState('Copied Markdown');
+  });
+
+  bugReportCopyButton.addEventListener('click', async () => {
+    const copied = await copyTextToClipboard(buildBugReportDetails());
+    if (!copied) {
+      showSaveState('Copy unavailable');
+      return;
+    }
+    showCopyFeedback(bugReportCopyButton, {
+      copiedLabel: 'Copied bug report details',
+      defaultLabel: 'Copy bug report details',
+      defaultTitle: 'Copy bug report details'
+    });
+    showSaveState('Copied bug report details');
   });
 
   for (const button of downloadButtons) {
@@ -319,4 +341,73 @@ export function getDocumentSelectionRange(root: HTMLElement, fromDocumentId: str
   const start = Math.min(fromIndex, toIndex);
   const end = Math.max(fromIndex, toIndex);
   return documentIds.slice(start, end + 1);
+}
+
+export interface BugReportDetails {
+  buildTimestamp: string;
+  displayVersion: string;
+  pageHref: string;
+  releaseNotesHref: string;
+  userAgent: string;
+}
+
+export function createBugReportDetails({
+  buildTimestamp,
+  displayVersion,
+  pageHref,
+  releaseNotesHref,
+  userAgent
+}: BugReportDetails): string {
+  return [
+    'Lepapier bug report',
+    `Version: ${displayVersion}`,
+    `Build date: ${buildTimestamp}`,
+    `Release notes: ${releaseNotesHref}`,
+    `App URL: ${pageHref || 'unknown'}`,
+    `User agent: ${userAgent || 'unknown'}`,
+    '',
+    'What happened:',
+    '',
+    'What I expected:',
+    '',
+    'Steps to reproduce:',
+    '1. '
+  ].join('\n');
+}
+
+async function copyTextToClipboard(text: string): Promise<boolean> {
+  if (!navigator.clipboard?.writeText) {
+    return copyTextWithSelection(text);
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return copyTextWithSelection(text);
+  }
+}
+
+function copyTextWithSelection(text: string): boolean {
+  const activeElement = document.activeElement;
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.left = '-9999px';
+  textarea.style.opacity = '0';
+  textarea.style.pointerEvents = 'none';
+  textarea.style.position = 'fixed';
+  textarea.style.top = '0';
+  document.body.append(textarea);
+  textarea.select();
+  textarea.setSelectionRange(0, textarea.value.length);
+
+  try {
+    return document.execCommand('copy');
+  } finally {
+    textarea.remove();
+    if (activeElement instanceof HTMLElement) {
+      activeElement.focus();
+    }
+  }
 }

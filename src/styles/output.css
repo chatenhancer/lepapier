@@ -67,11 +67,13 @@
 }
 
 .output-copy-check,
-.output-copy-button.is-copied .output-copy-icon {
+.output-copy-button.is-copied .output-copy-icon,
+.app-copy-button.is-copied .output-copy-icon {
   display: none;
 }
 
-.output-copy-button.is-copied .output-copy-check {
+.output-copy-button.is-copied .output-copy-check,
+.app-copy-button.is-copied .output-copy-check {
   display: block;
 }
 
