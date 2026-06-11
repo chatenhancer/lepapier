@@ -107,11 +107,10 @@
   overflow: hidden;
   pointer-events: none;
   transform-origin: 50% 34%;
+  transform-style: preserve-3d;
   backface-visibility: hidden;
-  animation:
-    paper-mail-fold var(--mail-duration) var(--mail-insert-ease) both,
-    paper-mail-vanish var(--mail-duration) linear both;
-  will-change: transform, opacity;
+  animation: paper-mail-fold var(--mail-duration) linear both;
+  will-change: transform;
 }
 
 .paper.is-download-folding .paper-width-resize {
@@ -122,34 +121,23 @@
   0% {
     transform: translate3d(0, 0, 0) rotateX(0deg) rotateZ(0deg) scale(1);
   }
-  16% {
-    transform: translate3d(0, -10px, 48px) rotateX(10deg) rotateZ(-0.6deg) scale(0.99);
+  12% {
+    transform: translate3d(0, -8px, 44px) rotateX(7deg) rotateZ(-0.4deg) scale(0.995);
   }
-  68% {
-    transform: translate3d(0, 146px, 0) rotateX(88deg) rotateZ(0deg) scale(0.16, 0.07);
+  26% {
+    transform: translate3d(0, 38px, 38px) rotateX(26deg) rotateZ(-0.22deg) scale(0.82, 0.62);
   }
-  82% {
+  42% {
+    transform: translate3d(0, 96px, 20px) rotateX(58deg) rotateZ(-0.08deg) scale(0.42, 0.22);
+  }
+  58% {
+    transform: translate3d(0, 136px, 5px) rotateX(80deg) rotateZ(0deg) scale(0.22, 0.09);
+  }
+  70% {
     transform: translate3d(0, 146px, 0) rotateX(88deg) rotateZ(0deg) scale(0.16, 0.07);
   }
   100% {
     transform: translate3d(0, 0, 0) rotateX(0deg) rotateZ(0deg) scale(1);
-  }
-}
-
-@keyframes paper-mail-vanish {
-  0%,
-  18% {
-    opacity: 1;
-  }
-  30% {
-    opacity: 0.5;
-  }
-  40%,
-  84% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
   }
 }
 
@@ -159,7 +147,7 @@
     opacity: 0;
   }
   34%,
-  84% {
+  92% {
     opacity: 1;
   }
   100% {
@@ -228,7 +216,7 @@
     opacity: 0;
   }
   38%,
-  84% {
+  90% {
     opacity: 1;
   }
   100% {
