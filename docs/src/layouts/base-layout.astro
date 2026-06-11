@@ -13,6 +13,7 @@ const {
   title?: string;
 };
 const canonicalUrl = new URL(Astro.url.pathname, siteUrl).toString();
+const currentYear = new Date().getFullYear();
 const structuredData = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
@@ -63,5 +64,8 @@ const structuredDataJson = JSON.stringify(structuredData).replace(/</g, '\\u003c
   </head>
   <body>
     <slot />
+    <footer class="site-footer">
+      <p>Copyright {currentYear} Lepapier.</p>
+    </footer>
   </body>
 </html>

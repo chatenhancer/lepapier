@@ -196,6 +196,20 @@ img {
   line-height: 1.5;
 }
 
+.site-footer {
+  padding: 34px 24px 42px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  text-align: center;
+}
+
+.site-footer p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
 @media (max-width: 760px) {
   .hero {
     align-items: start;
