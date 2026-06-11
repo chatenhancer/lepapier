@@ -1,0 +1,163 @@
+.sidebar {
+  position: fixed;
+  right: max(24px, calc((100vw - 1420px) / 2));
+  top: var(--sidebar-top);
+  z-index: 8;
+  width: var(--sidebar-width);
+  max-height: calc(100vh - var(--sidebar-top) - 18px);
+  overflow: hidden;
+  background: transparent;
+  opacity: 0.18;
+  transform: translateX(var(--sidebar-avoidance));
+  transition: opacity 220ms ease, transform 160ms ease;
+}
+
+body.is-resizing-sheet .sidebar {
+  transition: opacity 220ms ease;
+}
+
+.sidebar.is-awake {
+  opacity: 0.58;
+}
+
+.sidebar.is-asleep {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sidebar:hover,
+.sidebar:focus-within {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sidebar-scroll {
+  max-height: calc(100vh - var(--sidebar-top) - 18px);
+  overflow: auto;
+  margin-right: -12px;
+  padding: 4px 12px 24px 0;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.sidebar-heading,
+.section-heading {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-heading {
+  margin-bottom: 22px;
+}
+
+.sidebar-heading h2 {
+  margin: 4px 0 0;
+  color: var(--control);
+  font-size: 18px;
+  letter-spacing: 0;
+}
+
+.eyebrow {
+  display: block;
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 680;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.field-stack,
+.sidebar-section {
+  display: grid;
+  gap: 10px;
+}
+
+.sidebar-section {
+  margin-top: 28px;
+}
+
+.section-heading h3 {
+  margin: 0;
+  color: var(--control-muted);
+  font-size: 13px;
+  font-weight: 560;
+  letter-spacing: 0;
+}
+
+.field {
+  display: grid;
+  gap: 3px;
+  color: var(--field-label);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.field-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 24px;
+}
+
+.field-heading label {
+  min-width: 0;
+}
+
+.field input,
+.field textarea {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 400;
+  outline: none;
+  padding: 5px 0 6px;
+  resize: vertical;
+  transition: border-color 160ms ease;
+}
+
+.field input:focus,
+.field textarea:focus {
+  border-color: color-mix(in srgb, var(--accent) 38%, transparent);
+}
+
+.checkbox-field {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 9px;
+  align-items: start;
+  color: var(--control-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.checkbox-field input {
+  margin: 2px 0 0;
+}
+
+.checkbox-field strong,
+.checkbox-field small {
+  display: block;
+}
+
+.checkbox-field strong {
+  color: var(--control);
+  font-size: 12px;
+  font-weight: 520;
+}
+
+.checkbox-field small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+}

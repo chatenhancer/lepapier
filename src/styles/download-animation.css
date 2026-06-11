@@ -1,0 +1,248 @@
+.download-envelope {
+  position: absolute;
+  top: var(--download-envelope-top, clamp(220px, 32vh, 350px));
+  right: 0;
+  left: 0;
+  width: min(68%, 480px);
+  aspect-ratio: 1.68;
+  margin-inline: auto;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.download-envelope-art {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  filter: drop-shadow(0 22px 48px rgba(0, 0, 0, 0.18));
+}
+
+.download-envelope-body,
+.download-envelope-flap-fill {
+  fill: var(--envelope-body);
+}
+
+.download-envelope-front {
+  fill: var(--envelope-pocket);
+  stroke: var(--envelope-edge);
+  stroke-linejoin: miter;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.download-envelope-body {
+  stroke: var(--envelope-edge);
+  stroke-linejoin: miter;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.download-envelope-sheet {
+  fill: var(--paper);
+  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.12));
+  opacity: 0;
+  transform: translateY(-28px);
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  will-change: opacity, transform;
+}
+
+.download-envelope-hinge,
+.download-envelope-flap-outline,
+.download-envelope-flap-closed-outline {
+  fill: none;
+  stroke: var(--envelope-edge);
+  stroke-linecap: butt;
+  stroke-linejoin: miter;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.download-envelope-hinge {
+  opacity: 0;
+}
+
+.download-envelope-flap-open,
+.download-envelope-flap-closed {
+  transform-box: view-box;
+  transform-origin: 50% 9.79%;
+  will-change: opacity, transform;
+}
+
+.download-envelope-flap-open {
+  opacity: 1;
+  transform: scaleY(-1);
+}
+
+.download-envelope-flap-closed {
+  opacity: 0;
+  transform: scaleY(-1);
+}
+
+.writing-column.is-mailing .download-envelope {
+  animation: envelope-receive var(--mail-duration) var(--mail-ease) both;
+}
+
+.writing-column.is-mailing .download-envelope-flap-open {
+  animation: envelope-flap-open var(--mail-duration) var(--mail-ease) both;
+}
+
+.writing-column.is-mailing .download-envelope-flap-closed {
+  animation: envelope-flap-close var(--mail-duration) var(--mail-ease) both;
+}
+
+.writing-column.is-mailing .download-envelope-hinge {
+  animation: envelope-hinge-line var(--mail-duration) linear both;
+}
+
+.writing-column.is-mailing .download-envelope-sheet {
+  animation:
+    envelope-sheet-slide var(--mail-duration) var(--mail-insert-ease) both,
+    envelope-sheet-visibility var(--mail-duration) linear both;
+}
+
+.paper.is-download-folding {
+  z-index: 8;
+  overflow: hidden;
+  pointer-events: none;
+  transform-origin: 50% 34%;
+  backface-visibility: hidden;
+  animation:
+    paper-mail-fold var(--mail-duration) var(--mail-insert-ease) both,
+    paper-mail-vanish var(--mail-duration) linear both;
+  will-change: transform, opacity;
+}
+
+.paper.is-download-folding .paper-width-resize {
+  opacity: 0;
+}
+
+@keyframes paper-mail-fold {
+  0% {
+    transform: translate3d(0, 0, 0) rotateX(0deg) rotateZ(0deg) scale(1);
+  }
+  16% {
+    transform: translate3d(0, -10px, 48px) rotateX(10deg) rotateZ(-0.6deg) scale(0.99);
+  }
+  68% {
+    transform: translate3d(0, 146px, 0) rotateX(88deg) rotateZ(0deg) scale(0.16, 0.07);
+  }
+  82% {
+    transform: translate3d(0, 146px, 0) rotateX(88deg) rotateZ(0deg) scale(0.16, 0.07);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotateX(0deg) rotateZ(0deg) scale(1);
+  }
+}
+
+@keyframes paper-mail-vanish {
+  0%,
+  18% {
+    opacity: 1;
+  }
+  30% {
+    opacity: 0.5;
+  }
+  40%,
+  84% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes envelope-receive {
+  0%,
+  26% {
+    opacity: 0;
+  }
+  34%,
+  84% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes envelope-hinge-line {
+  0%,
+  26% {
+    opacity: 0;
+  }
+  34%,
+  72% {
+    opacity: 1;
+  }
+  80%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes envelope-flap-open {
+  0%,
+  72% {
+    opacity: 1;
+    transform: scaleY(-1);
+  }
+  74%,
+  100% {
+    opacity: 0;
+    transform: scaleY(-1);
+  }
+}
+
+@keyframes envelope-flap-close {
+  0%,
+  70% {
+    opacity: 0;
+    transform: scaleY(-1);
+  }
+  72%,
+  74% {
+    opacity: 1;
+    transform: scaleY(-1);
+  }
+  86%,
+  100% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes envelope-sheet-slide {
+  0% {
+    transform: translateY(-28px);
+  }
+  100% {
+    transform: translateY(22px);
+  }
+}
+
+@keyframes envelope-sheet-visibility {
+  0%,
+  26% {
+    opacity: 0;
+  }
+  38%,
+  84% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .paper.is-download-folding,
+  .writing-column.is-mailing .download-envelope,
+  .writing-column.is-mailing .download-envelope-flap-open,
+  .writing-column.is-mailing .download-envelope-flap-closed,
+  .writing-column.is-mailing .download-envelope-hinge,
+  .writing-column.is-mailing .download-envelope-sheet {
+    animation: none;
+  }
+}

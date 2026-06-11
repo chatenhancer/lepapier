@@ -3,40 +3,86 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#faf9f6">
+    <meta name="theme-color" content="#ffffff">
+    <script>(()=>{const e=document.documentElement,m=document.querySelector('meta[name="theme-color"]');let t;try{t=localStorage.getItem('lepapier-theme')}catch{}t=t==="dark"||t==="light"?t:matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";e.dataset.theme=t;m?.setAttribute("content",t==="dark"?"#000000":"#ffffff")})();</script>
+    <link rel="stylesheet" href="/src/styles.css">
     <title>Lepapier</title>
+    <meta name="application-name" content="Lepapier">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Lepapier">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="/assets/icons/lepapier.svg" data-app-icon>
     <link rel="apple-touch-icon" href="/assets/icons/lepapier.svg" data-app-icon>
     <link rel="preload" href="/assets/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
   </head>
   <body>
     <header class="editor-header">
-      <a class="brand" href="/" aria-label="Lepapier home" data-app-home>
-        <img src="/assets/icons/lepapier.svg" width="32" height="28" alt="" data-app-logo>
+      <a class="brand" href="https://lepapier.app" aria-label="Lepapier home" data-app-home>
+        <img class="brand-logo brand-logo-light" src="/assets/icons/lepapier.svg" width="64" height="64" alt="" data-app-logo="light">
+        <img class="brand-logo brand-logo-dark" src="/assets/icons/lepapier-dark.svg" width="64" height="64" alt="" data-app-logo="dark">
       </a>
       <div class="header-actions">
-        <span class="save-state" data-save-state>Saved locally</span>
+        <span class="save-state" data-save-state>Saved in browser</span>
+        <button class="text-button" type="button" data-install-app hidden>Install</button>
         <button class="text-button" type="button" data-theme-toggle aria-pressed="false">Dark mode</button>
       </div>
     </header>
 
+    <button class="mobile-panel-toggle mobile-panel-toggle-documents" type="button" data-mobile-panel-toggle="documents" aria-controls="documents-sidebar" aria-expanded="false">Documents</button>
+    <button class="mobile-panel-toggle mobile-panel-toggle-settings" type="button" data-mobile-panel-toggle="settings" aria-controls="settings-sidebar" aria-expanded="false">Settings</button>
+
     <main class="editor-shell">
-      <aside class="documents-sidebar" data-documents-sidebar aria-label="Documents">
+      <aside id="documents-sidebar" class="documents-sidebar" data-documents-sidebar aria-label="Documents">
         <div class="documents-heading">
-          <div>
-            <h2>Documents</h2>
+          <div class="documents-heading-copy">
+            <h2>Documents <span class="document-count" data-document-count aria-label="1 document open">1</span></h2>
           </div>
-          <button class="icon-button" type="button" data-add-document aria-label="New document" title="New document">
-            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
-              <path d="M12 4a1 1 0 0 1 1 1v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6V5a1 1 0 0 1 1-1Z"></path>
-            </svg>
-          </button>
+          <div class="documents-heading-actions">
+            <button class="icon-button" type="button" data-add-document aria-label="New document" title="New document">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <path d="M12 4a1 1 0 0 1 1 1v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6V5a1 1 0 0 1 1-1Z"></path>
+              </svg>
+            </button>
+          </div>
         </div>
-        <div class="document-list" data-document-list></div>
-        <input type="file" webkitdirectory directory multiple data-open-post-folder-files hidden>
-        <button class="secondary-button full-button" type="button" data-open-post-folder>Open post folder</button>
-        <button class="secondary-button full-button" type="button" data-open-editable-folder>Open editable folder</button>
-        <button class="secondary-button full-button" type="button" data-download-all>Download all posts</button>
+        <label class="document-select-all">
+          <input type="checkbox" data-select-all-documents>
+          <span>Select all</span>
+        </label>
+        <div class="document-list-shell">
+          <div class="document-list" data-document-list></div>
+        </div>
+        <input type="file" accept=".md,text/markdown" data-open-document-file hidden>
+        <div class="open-menu-root">
+          <button
+            class="secondary-button full-button"
+            type="button"
+            data-open-document
+            aria-expanded="false"
+            data-tooltip="Open Markdown without syncing back to the source."
+          >Open</button>
+          <div class="open-menu" data-open-menu="open" hidden>
+            <button type="button" data-open-document-file-action>Markdown file</button>
+            <button type="button" data-open-document-folder>Folder</button>
+          </div>
+        </div>
+        <div class="open-menu-root">
+          <button
+            class="secondary-button full-button"
+            type="button"
+            data-open-editable-folder
+            aria-expanded="false"
+            data-tooltip="Open Markdown and keep future saves synced to the selected file or folder."
+          >Open and sync</button>
+          <div class="open-menu" data-open-menu="sync" hidden>
+            <button type="button" data-open-editable-file>Markdown file</button>
+            <button type="button" data-open-editable-folder-action>Folder</button>
+          </div>
+        </div>
+        <button class="secondary-button full-button" type="button" data-download>Download</button>
+        <button class="secondary-button full-button" type="button" data-download-all>Download all</button>
+        <button class="text-button full-button document-bulk-delete" type="button" data-delete-selected hidden>Delete selected</button>
       </aside>
 
       <section class="writing-column" aria-labelledby="editor-title">
@@ -59,10 +105,27 @@
           </button>
         </div>
 
+        <div class="download-envelope" aria-hidden="true">
+          <svg class="download-envelope-art" viewBox="0 0 480 286" focusable="false" aria-hidden="true">
+            <path class="download-envelope-body" d="M0 28H480V286H0Z"></path>
+            <g class="download-envelope-flap-open">
+              <path class="download-envelope-flap-fill" d="M0 28H480V108L240 206L0 108Z"></path>
+              <path class="download-envelope-flap-outline" d="M0 28H480V108L240 206L0 108Z"></path>
+            </g>
+            <rect class="download-envelope-sheet" x="14" y="34" width="452" height="228"></rect>
+            <path class="download-envelope-front" d="M0 108L240 206L480 108V286H0Z"></path>
+            <path class="download-envelope-hinge" d="M0 28H480"></path>
+            <g class="download-envelope-flap-closed">
+              <path class="download-envelope-flap-fill" d="M0 26H480V108L240 206L0 108Z"></path>
+              <path class="download-envelope-flap-closed-outline" d="M480 28V108L240 206L0 108V28"></path>
+            </g>
+          </svg>
+        </div>
+
         <article class="paper" aria-labelledby="editor-title">
-          <h1 id="editor-title" class="sr-only">Post body</h1>
+          <h1 id="editor-title" class="sr-only">Document body</h1>
           <input type="hidden" data-field="image">
-          <label class="sr-only" for="body">Post body</label>
+          <label class="sr-only" for="body">Document body</label>
           <textarea
             id="body"
             class="body-input"
@@ -76,13 +139,13 @@
         </article>
       </section>
 
-      <aside class="sidebar" data-sidebar aria-label="Settings">
+      <aside id="settings-sidebar" class="sidebar" data-sidebar aria-label="Settings">
         <div class="sidebar-scroll">
           <div class="field-stack">
             <div class="field">
               <div class="field-heading">
                 <label for="title">Title</label>
-                <button class="metadata-refresh" type="button" data-ai-regenerate="title" title="Regenerate title with Chrome AI" aria-label="Regenerate title with Chrome AI">
+                <button class="metadata-refresh" type="button" data-ai-regenerate="title" data-tooltip="Regenerate title with Chrome AI" aria-label="Regenerate title with Chrome AI" hidden>
                   <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
                     <path d="M12 5a7 7 0 0 1 6.32 4H16a1 1 0 1 0 0 2h4.5a1 1 0 0 0 1-1V5.5a1 1 0 1 0-2 0v1.72A9 9 0 0 0 3.52 9.18a1 1 0 0 0 1.86.74A7 7 0 0 1 12 5Zm-8.5 8a1 1 0 0 0-1 1v4.5a1 1 0 1 0 2 0v-1.72a9 9 0 0 0 15.98-1.96 1 1 0 1 0-1.86-.74A7 7 0 0 1 5.68 15H8a1 1 0 1 0 0-2H3.5Z"></path>
                   </svg>
@@ -101,18 +164,18 @@
             <div class="field">
               <div class="field-heading">
                 <label for="description">Description</label>
-                <button class="metadata-refresh" type="button" data-ai-regenerate="description" title="Regenerate description with Chrome AI" aria-label="Regenerate description with Chrome AI">
+                <button class="metadata-refresh" type="button" data-ai-regenerate="description" data-tooltip="Regenerate description with Chrome AI" aria-label="Regenerate description with Chrome AI" hidden>
                   <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
                     <path d="M12 5a7 7 0 0 1 6.32 4H16a1 1 0 1 0 0 2h4.5a1 1 0 0 0 1-1V5.5a1 1 0 1 0-2 0v1.72A9 9 0 0 0 3.52 9.18a1 1 0 0 0 1.86.74A7 7 0 0 1 12 5Zm-8.5 8a1 1 0 0 0-1 1v4.5a1 1 0 1 0 2 0v-1.72a9 9 0 0 0 15.98-1.96 1 1 0 1 0-1.86-.74A7 7 0 0 1 5.68 15H8a1 1 0 1 0 0-2H3.5Z"></path>
                   </svg>
                 </button>
               </div>
-              <textarea id="description" data-field="description" rows="5" placeholder="A short summary for cards, feeds, and metadata."></textarea>
+              <textarea id="description" data-field="description" rows="5" placeholder="A concise overview of what this document covers."></textarea>
             </div>
             <div class="field">
               <div class="field-heading">
                 <label for="tags">Tags</label>
-                <button class="metadata-refresh" type="button" data-ai-regenerate="tags" title="Regenerate tags with Chrome AI" aria-label="Regenerate tags with Chrome AI">
+                <button class="metadata-refresh" type="button" data-ai-regenerate="tags" data-tooltip="Regenerate tags with Chrome AI" aria-label="Regenerate tags with Chrome AI" hidden>
                   <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
                     <path d="M12 5a7 7 0 0 1 6.32 4H16a1 1 0 1 0 0 2h4.5a1 1 0 0 0 1-1V5.5a1 1 0 1 0-2 0v1.72A9 9 0 0 0 3.52 9.18a1 1 0 0 0 1.86.74A7 7 0 0 1 12 5Zm-8.5 8a1 1 0 0 0-1 1v4.5a1 1 0 1 0 2 0v-1.72a9 9 0 0 0 15.98-1.96 1 1 0 1 0-1.86-.74A7 7 0 0 1 5.68 15H8a1 1 0 1 0 0-2H3.5Z"></path>
                   </svg>
@@ -148,7 +211,7 @@
             <div class="section-heading">
               <h3 id="images-title">Images</h3>
             </div>
-            <p class="helper">Images are exported into the post folder.</p>
+            <p class="helper">Images are exported with this document.</p>
             <label class="file-drop file-drop-small">
               <input type="file" accept="image/*" multiple data-image-picker>
               <span>Add images</span>
@@ -163,8 +226,8 @@
             <p class="helper">
               Uses Chrome built-in AI when available. The model runs locally after Chrome installs it.
             </p>
-            <button class="secondary-button" type="button" data-ai-enable>Retry metadata helper</button>
-            <p class="ai-status" data-ai-status>Starting automatically...</p>
+            <button class="secondary-button" type="button" data-ai-enable hidden>Retry metadata helper</button>
+            <p class="ai-status" data-ai-status>Write text, then use field refresh buttons for metadata.</p>
           </section>
 
           <section class="sidebar-section" aria-labelledby="download-title">
@@ -172,16 +235,16 @@
               <h3 id="download-title">Export</h3>
             </div>
             <p class="helper">
-              Downloads portable Markdown post folders.
+              Downloads portable Markdown document folders.
             </p>
             <label class="checkbox-field">
               <input type="checkbox" data-randomize-image-names>
               <span>
                 <strong>Randomize image file names</strong>
-                <small>Applies only to the downloaded ZIP.</small>
+                <small>Applies only the downloaded zip file.</small>
               </span>
             </label>
-            <button class="primary-button full-button" type="button" data-download>Download post</button>
+            <button class="primary-button full-button" type="button" data-download>Download this document</button>
             <button class="text-button full-button" type="button" data-reset>Reset local draft</button>
           </section>
 
@@ -189,8 +252,11 @@
             <summary>
               <span>Generated Markdown</span>
               <button class="output-copy-button" type="button" data-copy aria-label="Copy generated markdown" title="Copy">
-                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <svg class="output-copy-icon" viewBox="0 0 24 24" focusable="false" aria-hidden="true">
                   <path d="M7 4a3 3 0 0 1 3-3h7a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-1v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3h1V4Zm2 1h4a3 3 0 0 1 3 3v7h1a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1h-7a1 1 0 0 0-1 1v1ZM6 7a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1H6Z"></path>
+                </svg>
+                <svg class="output-copy-check" viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                  <path d="M9.2 16.6 4.9 12.3a1 1 0 0 0-1.4 1.4l5 5a1 1 0 0 0 1.4 0l10.6-10.6a1 1 0 0 0-1.4-1.4L9.2 16.6Z"></path>
                 </svg>
               </button>
             </summary>
@@ -200,12 +266,14 @@
       </aside>
     </main>
 
+    <div class="tooltip-layer" data-tooltip-layer role="tooltip" hidden></div>
+
     <template data-image-row-template>
       <article class="image-row">
         <img alt="">
         <div>
           <strong data-image-name></strong>
-          <code data-image-path></code>
+          <span class="image-meta" data-image-meta></span>
           <div class="image-actions">
             <button type="button" data-insert-image>Insert</button>
             <button type="button" data-insert-inline-image>Inline</button>

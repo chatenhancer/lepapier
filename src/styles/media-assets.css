@@ -1,0 +1,124 @@
+.file-drop {
+  display: grid;
+  place-items: center;
+  min-height: 58px;
+  border: 1px dashed var(--file-border);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--control-muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease, background 150ms ease;
+}
+
+.file-drop-small {
+  min-height: 38px;
+}
+
+.file-drop:hover {
+  border-color: color-mix(in srgb, var(--accent) 34%, transparent);
+  background: var(--file-hover);
+  color: var(--primary);
+}
+
+.file-drop.is-dragging {
+  border-color: color-mix(in srgb, var(--accent) 42%, transparent);
+  background: var(--file-hover);
+  color: var(--primary);
+}
+
+.file-drop input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.cover-preview,
+.image-row {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  background: transparent;
+}
+
+.cover-preview img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--soft-image);
+}
+
+.cover-preview code,
+.image-meta {
+  display: block;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.image-list {
+  display: grid;
+  gap: 12px;
+}
+
+.image-row {
+  grid-template-columns: 56px minmax(0, 1fr);
+  align-items: center;
+}
+
+.image-row img {
+  width: 56px;
+  height: 42px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--soft-image);
+}
+
+.image-row strong {
+  display: block;
+  overflow: hidden;
+  margin-bottom: 3px;
+  color: var(--preview-ink);
+  font-size: 12px;
+  font-weight: 620;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.image-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.image-actions button,
+.image-actions a {
+  min-height: 25px;
+  padding: 3px 7px;
+  background: transparent;
+}
+
+[data-ai-enable] {
+  width: 100%;
+  min-height: 32px;
+  background: var(--soft);
+  color: var(--control);
+}
+
+[data-ai-enable]:not(:disabled):hover,
+[data-ai-enable]:not(:disabled):focus-visible {
+  background: var(--control-hover);
+  color: var(--ink);
+}
+
+.ai-status {
+  margin: -4px 0 0;
+}

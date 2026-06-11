@@ -1,0 +1,19 @@
+{
+  "name": "Lepapier",
+  "short_name": "Lepapier",
+  "description": "A local-first Markdown writing app.",
+  "id": ".",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/assets/icons/lepapier.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

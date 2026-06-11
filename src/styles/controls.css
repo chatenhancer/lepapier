@@ -1,0 +1,212 @@
+.toolbar button,
+.text-button,
+.secondary-button,
+.primary-button,
+.preview-toggle,
+.icon-button,
+.metadata-refresh,
+.image-actions button,
+.image-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--control);
+  padding: 5px 9px;
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.toolbar button:hover,
+.text-button:hover,
+.secondary-button:hover,
+.preview-toggle:hover,
+.icon-button:hover,
+.metadata-refresh:hover,
+.image-actions button:hover,
+.image-actions a:hover {
+  background: var(--control-hover);
+}
+
+.primary-button {
+  background: var(--primary);
+  color: var(--accent-ink);
+}
+
+.primary-button:hover {
+  background: var(--primary-hover);
+}
+
+.preview-toggle:hover,
+.preview-toggle:focus-visible {
+  background: var(--primary-hover);
+  color: var(--accent-ink);
+}
+
+.secondary-button {
+  width: max-content;
+  background: transparent;
+  color: var(--control-muted);
+}
+
+.full-button {
+  width: 100%;
+}
+
+.preview-toggle {
+  gap: 7px;
+  background: var(--primary);
+  color: var(--accent-ink);
+}
+
+.preview-toggle svg,
+.icon-button svg,
+.metadata-refresh svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.preview-toggle[aria-pressed="true"] {
+  background: var(--primary-hover);
+  color: var(--accent-ink);
+}
+
+.icon-button {
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+}
+
+.metadata-refresh {
+  width: 26px;
+  min-height: 26px;
+  color: var(--control-muted);
+  padding: 0;
+  opacity: 0.62;
+}
+
+.metadata-refresh:hover,
+.metadata-refresh:focus-visible {
+  color: var(--primary);
+  opacity: 1;
+}
+
+.metadata-refresh.is-busy svg {
+  animation: metadata-refresh-spin 800ms linear infinite;
+}
+
+input[type="checkbox"] {
+  appearance: none;
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-content: center;
+  width: 15px;
+  height: 15px;
+  border: 1px solid color-mix(in srgb, var(--control) 28%, transparent);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--paper) 82%, transparent);
+  color: var(--accent-ink);
+  cursor: inherit;
+  transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+input[type="checkbox"]::after {
+  content: "";
+  width: 4px;
+  height: 7px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  opacity: 0;
+  transform: translateY(-1px) rotate(42deg) scale(0.74);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+input[type="checkbox"]:hover {
+  border-color: color-mix(in srgb, var(--accent) 46%, var(--control));
+  background: color-mix(in srgb, var(--control-hover) 76%, transparent);
+}
+
+input[type="checkbox"]:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+input[type="checkbox"]:checked {
+  border-color: var(--primary);
+  background: var(--primary);
+}
+
+input[type="checkbox"]:indeterminate {
+  border-color: var(--primary);
+  background: var(--primary);
+}
+
+input[type="checkbox"]:checked::after {
+  opacity: 1;
+  transform: translateY(-1px) rotate(42deg) scale(1);
+}
+
+input[type="checkbox"]:indeterminate::after {
+  width: 7px;
+  height: 2px;
+  border: 0;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 1;
+  transform: none;
+}
+
+.checkbox-field input[type="checkbox"] {
+  margin: 2px 0 0;
+}
+
+.document-select[type="checkbox"] {
+  margin: 0 0 0 9px;
+}
+
+button:disabled,
+input:disabled,
+textarea:disabled,
+select:disabled {
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+
+.toolbar button:disabled,
+.text-button:disabled,
+.secondary-button:disabled,
+.primary-button:disabled,
+.preview-toggle:disabled,
+.icon-button:disabled,
+.metadata-refresh:disabled,
+.image-actions button:disabled {
+  background: color-mix(in srgb, var(--control) 7%, transparent);
+  color: var(--muted);
+  box-shadow: none;
+  transform: none;
+}
+
+.primary-button:disabled,
+.preview-toggle:disabled,
+.preview-toggle[aria-pressed="true"]:disabled {
+  background: var(--line);
+  color: var(--muted);
+}
+
+.metadata-refresh:disabled {
+  opacity: 0.34;
+}
+
+@keyframes metadata-refresh-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
