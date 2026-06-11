@@ -8,11 +8,9 @@
 # Lepapier.app
 
 <p>
-  <a href="https://lepapier.app"><img alt="website" src="https://img.shields.io/badge/website-lepapier.app-000000"></a>
-  <a href="https://lepapier.app/editor/"><img alt="editor" src="https://img.shields.io/badge/editor-start%20writing-000000"></a>
-  <img alt="release" src="https://img.shields.io/github/v/release/chatenhancer/lepapier?label=release&color=000000">
+  <img alt="release" src="https://img.shields.io/github/v/release/chatenhancer/lepapier?label=release&color=3f3f46">
   <a href="https://github.com/chatenhancer/lepapier/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/chatenhancer/lepapier/ci.yml?label=ci"></a>
-  <img alt="pwa" src="https://img.shields.io/badge/pwa-ready-6b7280">
+  <img alt="pwa" src="https://img.shields.io/badge/pwa-ready-f97316">
   <a href="LICENSE"><img alt="license" src="https://img.shields.io/badge/license-GPL--3.0%2B-2da44e"></a>
 </p>
 
