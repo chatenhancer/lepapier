@@ -46,10 +46,24 @@ export function registerPwa(): void {
 
   if (!canRegisterServiceWorker()) return;
 
+  const serviceWorkerUrl = `service-worker.js?v=${encodeURIComponent(__LEPAPIER_BUILD_TIMESTAMP__)}`;
+  const shouldReloadOnControllerChange = Boolean(navigator.serviceWorker.controller);
+  let didReloadForServiceWorkerUpdate = false;
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!shouldReloadOnControllerChange || didReloadForServiceWorkerUpdate) return;
+
+    didReloadForServiceWorkerUpdate = true;
+    window.location.reload();
+  });
+
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('service-worker.js', { scope: './' }).catch((error: unknown) => {
-      console.warn('Lepapier service worker registration failed.', error);
-    });
+    navigator.serviceWorker
+      .register(serviceWorkerUrl, { scope: './', updateViaCache: 'none' })
+      .then((registration) => registration.update().catch(() => undefined))
+      .catch((error: unknown) => {
+        console.warn('Lepapier service worker registration failed.', error);
+      });
   });
 }
 

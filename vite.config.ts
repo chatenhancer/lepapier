@@ -269,7 +269,7 @@ self.addEventListener("fetch",(event)=>{
     event.respondWith((async()=>{
       const cache=await caches.open(CACHE_NAME);
       try {
-        const response=await fetch(request);
+        const response=await fetch(request,{cache:"reload"});
         if(response.ok) await cache.put(APP_INDEX,response.clone());
         return response;
       } catch {
