@@ -5,7 +5,7 @@ import type {
   DocumentEditState,
   DocumentFields,
   DocumentRecord,
-  ImageAsset
+  MediaAsset
 } from '../../shared/types';
 import type {
   EditorFieldElement,
@@ -136,7 +136,7 @@ function createEditState(): DocumentEditState {
   };
 }
 
-function createImageAsset(id: string, path: string): ImageAsset {
+function createImageAsset(id: string, path: string): MediaAsset {
   return {
     file: new File(['image'], path, { type: 'image/png' }),
     id,

@@ -1,24 +1,27 @@
 import {
-  getImageAltText
-} from '../../images/image-assets';
+  getMediaAltText,
+  isSupportedMediaFile,
+  isVideoFile,
+  sanitizeMediaFileName
+} from '../../media/media-assets';
 import {
   assetMatchesPath
-} from '../../images/image-library';
-import { renderImageList } from '../../images/image-list-view';
+} from '../../media/media-library';
+import { renderMediaList } from '../../media/media-list-view';
 import { replaceSelection } from '../../markdown/selection';
 import {
   dedupeFileName,
   sanitizeFileName
 } from '../../shared/text';
-import type { ImageAsset } from '../../shared/types';
+import type { MediaAsset } from '../../shared/types';
 
 export interface EditorMediaWorkflow {
-  addImageFile(file: File): ImageAsset | null;
+  addMediaFile(file: File): MediaAsset | null;
   getCurrentAssetNames(): string[];
   getPreviewAssetUrl(path: string): string;
-  insertDroppedImages(files: File[]): void;
+  insertDroppedMedia(files: File[]): void;
   renderCover(): void;
-  renderImages(): void;
+  renderMedia(): void;
   setCoverFile(file: File): void;
 }
 
@@ -28,17 +31,17 @@ export interface EditorMediaWorkflowOptions {
   coverPreview: HTMLElement;
   coverStatus: HTMLElement;
   createAssetId(): string;
-  getCoverImage(): ImageAsset | null;
+  getCoverImage(): MediaAsset | null;
   getFieldValue(name: 'image'): string;
-  imageList: HTMLElement;
-  imageTemplate: HTMLTemplateElement;
+  mediaList: HTMLElement;
+  mediaTemplate: HTMLTemplateElement;
   isPreviewActive(): boolean;
   exitPreviewMode(): void;
   recordHistory(): void;
-  saveAsset(asset: ImageAsset): Promise<void>;
+  saveAsset(asset: MediaAsset): Promise<void>;
   scheduleMetadata(): void;
-  selectedImages: ImageAsset[];
-  setCoverImage(asset: ImageAsset | null): void;
+  selectedMedia: MediaAsset[];
+  setCoverImage(asset: MediaAsset | null): void;
   setFieldValue(name: 'image', value: string): void;
   showSaveState(text: string): void;
   sync(): void;
@@ -52,14 +55,14 @@ export function createEditorMediaWorkflow({
   createAssetId,
   getCoverImage,
   getFieldValue,
-  imageList,
-  imageTemplate,
+  mediaList,
+  mediaTemplate,
   isPreviewActive,
   exitPreviewMode,
   recordHistory,
   saveAsset,
   scheduleMetadata,
-  selectedImages,
+  selectedMedia,
   setCoverImage,
   setFieldValue,
   showSaveState,
@@ -67,7 +70,7 @@ export function createEditorMediaWorkflow({
 }: EditorMediaWorkflowOptions): EditorMediaWorkflow {
   const getCurrentAssetNames = () => [
     getCoverImage()?.name,
-    ...selectedImages.map((image) => image.name)
+    ...selectedMedia.map((asset) => asset.name)
   ].filter((name): name is string => Boolean(name));
 
   const renderCover = () => {
@@ -82,16 +85,16 @@ export function createEditorMediaWorkflow({
     coverPath.textContent = coverImage.path;
   };
 
-  const renderImages = () => {
-    renderImageList({
-      imageList,
-      imageTemplate,
-      images: selectedImages,
-      onInsertBlock(image) {
-        insertImageMarkdown(image, false);
+  const renderMedia = () => {
+    renderMediaList({
+      media: selectedMedia,
+      mediaList,
+      mediaTemplate,
+      onInsertBlock(asset) {
+        insertMediaMarkdown(asset, false);
       },
-      onInsertInline(image) {
-        insertImageMarkdown(image, true);
+      onInsertInline(asset) {
+        insertMediaMarkdown(asset, true);
       }
     });
   };
@@ -100,7 +103,7 @@ export function createEditorMediaWorkflow({
     const currentCover = getCoverImage();
     if (currentCover?.url) URL.revokeObjectURL(currentCover.url);
 
-    const name = dedupeFileName(sanitizeFileName(file.name), selectedImages.map((image) => image.name));
+    const name = dedupeFileName(sanitizeFileName(file.name), selectedMedia.map((asset) => asset.name));
     const coverImage = {
       file,
       id: createAssetId(),
@@ -116,34 +119,34 @@ export function createEditorMediaWorkflow({
     renderCover();
   };
 
-  const addImageFile = (file: File): ImageAsset | null => {
-    if (!file.type.startsWith('image/')) return null;
+  const addMediaFile = (file: File): MediaAsset | null => {
+    if (!isSupportedMediaFile(file)) return null;
 
-    const name = dedupeFileName(sanitizeFileName(file.name), getCurrentAssetNames());
-    const image = {
+    const name = dedupeFileName(sanitizeMediaFileName(file), getCurrentAssetNames());
+    const asset = {
       file,
       id: createAssetId(),
       name,
       path: name,
       url: URL.createObjectURL(file)
     };
-    selectedImages.push(image);
-    void saveAsset(image).catch(() => {
-      showSaveState('Image could not be saved for refresh');
+    selectedMedia.push(asset);
+    void saveAsset(asset).catch(() => {
+      showSaveState('Media could not be saved for refresh');
     });
-    return image;
+    return asset;
   };
 
-  const insertDroppedImages = (files: File[]) => {
+  const insertDroppedMedia = (files: File[]) => {
     if (isPreviewActive()) {
       exitPreviewMode();
     }
 
     const snippets: string[] = [];
     for (const file of files) {
-      const image = addImageFile(file);
-      if (image) {
-        snippets.push(`![${getImageAltText(image.name)}](${image.path})`);
+      const asset = addMediaFile(file);
+      if (asset) {
+        snippets.push(`![${getMediaAltText(asset.name, asset.file.type)}](${asset.path})`);
       }
     }
 
@@ -151,32 +154,33 @@ export function createEditorMediaWorkflow({
 
     recordHistory();
     replaceSelection(bodyInput, snippets.join('\n\n'));
-    renderImages();
+    renderMedia();
     sync();
     scheduleMetadata();
   };
 
-  const insertImageMarkdown = (image: ImageAsset, inline: boolean) => {
+  const insertMediaMarkdown = (asset: MediaAsset, inline: boolean) => {
     if (isPreviewActive()) {
       exitPreviewMode();
     }
     recordHistory();
-    replaceSelection(bodyInput, inline ? `![Alt text](${image.path}){display=inline}` : `![Alt text](${image.path})`);
+    const altText = getMediaAltText(asset.name, asset.file.type);
+    replaceSelection(bodyInput, inline && !isVideoFile(asset.file) ? `![${altText}](${asset.path}){display=inline}` : `![${altText}](${asset.path})`);
     sync();
   };
 
   const getPreviewAssetUrl = (path: string) => {
-    const asset = [getCoverImage(), ...selectedImages].find((image) => assetMatchesPath(image, path));
+    const asset = [getCoverImage(), ...selectedMedia].find((candidate) => assetMatchesPath(candidate, path));
     return asset?.url || path;
   };
 
   return {
-    addImageFile,
+    addMediaFile,
     getCurrentAssetNames,
     getPreviewAssetUrl,
-    insertDroppedImages,
+    insertDroppedMedia,
     renderCover,
-    renderImages,
+    renderMedia,
     setCoverFile
   };
 }

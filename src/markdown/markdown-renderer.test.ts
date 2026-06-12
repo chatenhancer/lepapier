@@ -95,4 +95,12 @@ describe('renderMarkdown', () => {
     expect(html).toContain('data-tooltip="Drag to resize image"');
     expect(html).toContain('data-tooltip="Drag to change crop height"');
   });
+
+  it('renders video references as playable media', () => {
+    const html = renderMarkdown('![Demo](demo.mp4)');
+
+    expect(html).toContain('<span class="preview-video-frame" data-video-index="0" data-video-path="demo.mp4" tabindex="0">');
+    expect(html).toContain('<video src="demo.mp4" controls preload="metadata" aria-label="Demo"></video>');
+    expect(html).not.toContain('preview-image-tools');
+  });
 });

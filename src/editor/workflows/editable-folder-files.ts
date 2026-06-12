@@ -15,39 +15,39 @@ import {
 import { normalizeImportPath } from '../../documents/document-import';
 import { normalizeDocumentAssetPath } from '../../documents/document-markdown';
 import type {
-  ImageAsset,
+  MediaAsset,
   DocumentRecord
 } from '../../shared/types';
 
 export interface EditorEditableFolderFiles {
   getImportFilePath(file: File): string;
-  readAssetForEditableFolder(asset: ImageAsset, directoryHandle: FileSystemDirectoryHandle | undefined): Promise<Uint8Array<ArrayBuffer>>;
+  readAssetForEditableFolder(asset: MediaAsset, directoryHandle: FileSystemDirectoryHandle | undefined): Promise<Uint8Array<ArrayBuffer>>;
   readEditableFolderFile(directoryHandle: FileSystemDirectoryHandle, path: string): Promise<File>;
   readEditableFolderFiles(directoryHandle: FileSystemDirectoryHandle): Promise<File[]>;
   validateEditableFolderDocument(
     documentRecord: DocumentRecord,
     directoryHandle: FileSystemDirectoryHandle | undefined,
-    resolveAssets: (documentRecords: DocumentRecord[]) => Promise<ImageAsset[]>
+    resolveAssets: (documentRecords: DocumentRecord[]) => Promise<MediaAsset[]>
   ): Promise<void>;
   writeDocumentToEditableFolder(
     documentRecord: DocumentRecord,
     directoryHandle: FileSystemDirectoryHandle,
-    resolveAssets: (documentRecords: DocumentRecord[]) => Promise<ImageAsset[]>
+    resolveAssets: (documentRecords: DocumentRecord[]) => Promise<MediaAsset[]>
   ): Promise<void>;
   writeDocumentToEditableFile(
     documentRecord: DocumentRecord,
     fileHandle: FileSystemFileHandle,
-    resolveAssets: (documentRecords: DocumentRecord[]) => Promise<ImageAsset[]>
+    resolveAssets: (documentRecords: DocumentRecord[]) => Promise<MediaAsset[]>
   ): Promise<void>;
 }
 
 export interface EditorEditableFolderFilesOptions {
-  isImageFile(file: File): boolean;
+  isMediaFile(file: File): boolean;
   logError(message: string, error: unknown, details?: Record<string, unknown>): void;
 }
 
 export function createEditorEditableFolderFiles({
-  isImageFile,
+  isMediaFile,
   logError
 }: EditorEditableFolderFilesOptions): EditorEditableFolderFiles {
   const importFileRelativePaths = new WeakMap<File, string>();
@@ -69,11 +69,11 @@ export function createEditorEditableFolderFiles({
   };
 
   const readAssetForEditableFolder = async (
-    asset: ImageAsset,
+    asset: MediaAsset,
     directoryHandle: FileSystemDirectoryHandle | undefined
   ): Promise<Uint8Array<ArrayBuffer>> => {
     return await readEditableFolderAsset(asset, directoryHandle, {
-      isImageFile,
+      isMediaFile,
       logError,
       readFile: (path) => readEditableFolderFile(directoryHandle as FileSystemDirectoryHandle, path)
     });
@@ -93,7 +93,7 @@ export function createEditorEditableFolderFiles({
   const createEditableFolderFiles = async (
     documentRecord: DocumentRecord,
     directoryHandle: FileSystemDirectoryHandle | undefined,
-    resolveAssets: (documentRecords: DocumentRecord[]) => Promise<ImageAsset[]>
+    resolveAssets: (documentRecords: DocumentRecord[]) => Promise<MediaAsset[]>
   ) => {
     return await createEditableFolderDocumentFiles({
       documentRecord,
@@ -105,7 +105,7 @@ export function createEditorEditableFolderFiles({
   const validateEditableFolderDocument = async (
     documentRecord: DocumentRecord,
     directoryHandle: FileSystemDirectoryHandle | undefined,
-    resolveAssets: (documentRecords: DocumentRecord[]) => Promise<ImageAsset[]>
+    resolveAssets: (documentRecords: DocumentRecord[]) => Promise<MediaAsset[]>
   ): Promise<void> => {
     await createEditableFolderFiles(documentRecord, directoryHandle, resolveAssets);
   };
@@ -113,7 +113,7 @@ export function createEditorEditableFolderFiles({
   const writeDocumentToEditableFolder = async (
     documentRecord: DocumentRecord,
     directoryHandle: FileSystemDirectoryHandle,
-    resolveAssets: (documentRecords: DocumentRecord[]) => Promise<ImageAsset[]>
+    resolveAssets: (documentRecords: DocumentRecord[]) => Promise<MediaAsset[]>
   ): Promise<void> => {
     const files = await createEditableFolderFiles(documentRecord, directoryHandle, resolveAssets);
 

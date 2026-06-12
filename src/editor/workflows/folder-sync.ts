@@ -245,7 +245,7 @@ export function createEditorFolderSync({
         slug: getDocumentFieldValue(documentRecord, 'slug'),
         title: getDocumentFieldValue(documentRecord, 'title')
       });
-      showSaveState('Could not bundle every image');
+      showSaveState('Could not bundle every media asset');
     }
   };
 

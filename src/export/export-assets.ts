@@ -1,4 +1,4 @@
-import { assetMatchesPath } from '../images/image-library';
+import { assetMatchesPath } from '../media/media-library';
 import {
   getDocumentFieldValue,
   getReferencedBodyAssetPaths,
@@ -6,23 +6,23 @@ import {
   normalizeDocumentAssetPath
 } from '../documents/document-markdown';
 import type {
-  ImageAsset,
+  MediaAsset,
   DocumentRecord
 } from '../shared/types';
 
 export interface CollectExportAssetsOptions {
-  resolveAssetForPath(path: string, documentRecord: DocumentRecord): Promise<ImageAsset | null>;
+  resolveAssetForPath(path: string, documentRecord: DocumentRecord): Promise<MediaAsset | null>;
 }
 
 export interface ResolveExportAssetOptions {
   documents: DocumentRecord[];
-  getLiveAsset(path: string): ImageAsset | null;
-  restoreAssetFromEditableFolder(path: string, documentRecord: DocumentRecord): Promise<ImageAsset | null>;
-  restoreSavedAsset(metadata: DocumentRecord['coverImage']): Promise<ImageAsset | null>;
+  getLiveAsset(path: string): MediaAsset | null;
+  restoreAssetFromEditableFolder(path: string, documentRecord: DocumentRecord): Promise<MediaAsset | null>;
+  restoreSavedAsset(metadata: DocumentRecord['coverImage']): Promise<MediaAsset | null>;
 }
 
 export interface ReadEditableFolderAssetOptions {
-  isImageFile(file: File): boolean;
+  isMediaFile(file: File): boolean;
   logError(message: string, error: unknown, details: Record<string, unknown>): void;
   readFile(path: string): Promise<File>;
 }
@@ -35,15 +35,15 @@ export interface WriteEditableFolderFileOptions {
 export async function collectExportAssets(
   documentRecords: DocumentRecord[],
   { resolveAssetForPath }: CollectExportAssetsOptions
-): Promise<ImageAsset[]> {
-  const assets: ImageAsset[] = [];
+): Promise<MediaAsset[]> {
+  const assets: MediaAsset[] = [];
   const seenPaths = new Set<string>();
 
   for (const documentRecord of documentRecords) {
     const requestedAssetPaths = getReferencedBodyAssetPaths(documentRecord);
-    const imagePath = getDocumentFieldValue(documentRecord, 'image');
-    if (isImportableAssetReference(imagePath)) {
-      requestedAssetPaths.add(imagePath);
+    const mediaPath = getDocumentFieldValue(documentRecord, 'image');
+    if (isImportableAssetReference(mediaPath)) {
+      requestedAssetPaths.add(mediaPath);
     }
 
     for (const assetPath of requestedAssetPaths) {
@@ -67,7 +67,7 @@ export async function resolveExportAsset(
     restoreAssetFromEditableFolder,
     restoreSavedAsset
   }: ResolveExportAssetOptions
-): Promise<ImageAsset | null> {
+): Promise<MediaAsset | null> {
   const liveAsset = getLiveAsset(path);
   if (liveAsset) return liveAsset;
 
@@ -83,10 +83,10 @@ export async function resolveExportAsset(
 }
 
 export async function readEditableFolderAsset(
-  asset: ImageAsset,
+  asset: MediaAsset,
   directoryHandle: FileSystemDirectoryHandle | undefined,
   {
-    isImageFile,
+    isMediaFile,
     logError,
     readFile
   }: ReadEditableFolderAssetOptions
@@ -95,8 +95,8 @@ export async function readEditableFolderAsset(
   if (directoryHandle && sourcePath) {
     try {
       const sourceFile = await readFile(sourcePath);
-      if (!isImageFile(sourceFile)) {
-        throw new Error(`Editable folder asset is not an image: ${sourcePath}`);
+      if (!isMediaFile(sourceFile)) {
+        throw new Error(`Editable folder asset is not supported media: ${sourcePath}`);
       }
       return new Uint8Array(await sourceFile.arrayBuffer());
     } catch (error) {

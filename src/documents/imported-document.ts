@@ -12,17 +12,17 @@ import {
 import { getToday } from '../shared/date';
 import type {
   AssetMetadata,
-  ImageAsset,
+  MediaAsset,
   DocumentSource,
   DocumentRecord
 } from '../shared/types';
 import { slugify } from '../shared/text';
 
 export interface ImportedDocument {
-  assets: ImageAsset[];
-  coverImage: ImageAsset | null;
+  assets: MediaAsset[];
+  coverImage: MediaAsset | null;
   documentRecord: DocumentRecord;
-  images: ImageAsset[];
+  media: MediaAsset[];
 }
 
 export interface CreateImportedDocumentOptions {
@@ -68,7 +68,7 @@ export function createImportedDocument({
   const title = getFrontmatterValue(frontmatter.title).trim() || getImportTitleFromFile(markdownFile);
   const slug = getFrontmatterValue(frontmatter.slug).trim() || slugify(title);
   const importedBody = rewriteImportedMarkdownAssetPaths(body.trim(), importPlan.assetPathMap);
-  const importedImagePath = importPlan.coverImage?.path || normalizeImportedAssetReference(getFrontmatterValue(frontmatter.image));
+  const importedCoverImagePath = importPlan.coverImage?.path || normalizeImportedAssetReference(getFrontmatterValue(frontmatter.image));
   const documentRecord = normalizeDocumentRecord({
     coverImage: serializeAssetMetadata(importPlan.coverImage),
     editState: {
@@ -81,7 +81,7 @@ export function createImportedDocument({
       body: importedBody,
       date: getFrontmatterValue(frontmatter.date).trim() || getToday(),
       description: getFrontmatterValue(frontmatter.description),
-      image: importedImagePath,
+      image: importedCoverImagePath,
       slug,
       tags: formatImportedTags(frontmatter.tags),
       title
@@ -104,11 +104,11 @@ export function createImportedDocument({
     assets: importPlan.assets,
     coverImage: importPlan.coverImage,
     documentRecord,
-    images: importPlan.images
+    media: importPlan.media
   };
 }
 
-function serializeAssetMetadata(asset: ImageAsset | null | undefined): AssetMetadata | null {
+function serializeAssetMetadata(asset: MediaAsset | null | undefined): AssetMetadata | null {
   if (!asset) return null;
   return {
     id: asset.id,

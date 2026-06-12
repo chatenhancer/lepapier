@@ -1,7 +1,7 @@
 import { normalizeDocumentAssetPath } from '../documents/document-markdown';
 import type {
   AssetMetadata,
-  ImageAsset
+  MediaAsset
 } from '../shared/types';
 
 export function createAssetId(): string {
@@ -11,7 +11,7 @@ export function createAssetId(): string {
   return `asset-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-export function serializeAssetMetadata(asset: ImageAsset | null | undefined): AssetMetadata | null {
+export function serializeAssetMetadata(asset: MediaAsset | null | undefined): AssetMetadata | null {
   if (!asset) return null;
   return {
     id: asset.id,
@@ -21,11 +21,11 @@ export function serializeAssetMetadata(asset: ImageAsset | null | undefined): As
   };
 }
 
-export function createRestoredImageAsset(
+export function createRestoredMediaAsset(
   metadata: AssetMetadata,
   file: File,
   createObjectUrl: (file: File) => string = URL.createObjectURL
-): ImageAsset {
+): MediaAsset {
   return {
     file,
     id: String(metadata.id),
@@ -38,8 +38,8 @@ export function createRestoredImageAsset(
 
 export function findLiveAsset(
   metadata: AssetMetadata | null | undefined,
-  assets: Array<ImageAsset | null | undefined>
-): ImageAsset | null {
+  assets: Array<MediaAsset | null | undefined>
+): MediaAsset | null {
   if (!metadata?.id && !metadata?.path) return null;
 
   return assets.find((asset) => {
@@ -48,7 +48,7 @@ export function findLiveAsset(
   }) || null;
 }
 
-export function assetMatchesPath(asset: AssetMetadata | ImageAsset | null | undefined, path: string | undefined): boolean {
+export function assetMatchesPath(asset: AssetMetadata | MediaAsset | null | undefined, path: string | undefined): boolean {
   if (!asset || !path) return false;
 
   const requestedPath = normalizeDocumentAssetPath(path);

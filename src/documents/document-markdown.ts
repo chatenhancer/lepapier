@@ -1,4 +1,4 @@
-import type { ImageAsset, DocumentRecord } from '../shared/types';
+import type { MediaAsset, DocumentRecord } from '../shared/types';
 import { getToday } from '../shared/date';
 import {
   dedupeFileName,
@@ -89,7 +89,7 @@ export function dedupeFolderName(folderName: string, usedFolders: Set<string>): 
 }
 
 export function createExportAssetPathMap(
-  assets: ImageAsset[],
+  assets: MediaAsset[],
   { randomize = false }: { randomize?: boolean } = {}
 ): AssetPathMap {
   const localPathMap = randomize ? createRandomizedAssetPathMap(assets) : new Map<string, string>();
@@ -103,7 +103,7 @@ export function createExportAssetPathMap(
   return map;
 }
 
-export function createEditableFolderAssetPathMap(assets: ImageAsset[], markdownPath = 'index.md'): AssetPathMap {
+export function createEditableFolderAssetPathMap(assets: MediaAsset[], markdownPath = 'index.md'): AssetPathMap {
   const map: AssetPathMap = new Map();
   for (const asset of assets) {
     const sourcePath = normalizeDocumentAssetPath(asset.sourcePath || asset.path);
@@ -153,7 +153,7 @@ export function isImportableAssetReference(path: string): boolean {
     && !/^(?:data|mailto|tel):/i.test(trimmed);
 }
 
-function createRandomizedAssetPathMap(assets: ImageAsset[]): Map<string, string> {
+function createRandomizedAssetPathMap(assets: MediaAsset[]): Map<string, string> {
   const map = new Map<string, string>();
   const usedNames = new Set<string>();
   for (const asset of assets) {
@@ -164,7 +164,7 @@ function createRandomizedAssetPathMap(assets: ImageAsset[]): Map<string, string>
   return map;
 }
 
-function addAssetPathAliases(map: AssetPathMap, asset: ImageAsset, outputPath: string): void {
+function addAssetPathAliases(map: AssetPathMap, asset: MediaAsset, outputPath: string): void {
   for (const candidate of [asset.path, asset.sourcePath]) {
     const alias = normalizeDocumentAssetPath(candidate);
     if (!alias) continue;

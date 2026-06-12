@@ -20,9 +20,26 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Cache Playwright browsers
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+      - name: Install Playwright browser
+        run: npm run ci:install-playwright
       - name: Typecheck and test
-        run: npm run verify
+        run: npm run ci:verify
+      - name: Upload Playwright failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: playwright-failure-artifacts
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Check app build
-        run: npm run build
+        run: npm run ci:build-app
       - name: Build docs artifact
-        run: npm run pages:build:docs
+        run: npm run ci:build-docs

@@ -1,6 +1,6 @@
 import type {
   AssetMetadata,
-  ImageAsset,
+  MediaAsset,
   DocumentRecord,
   DocumentEditState,
   DocumentFields
@@ -12,28 +12,28 @@ import type {
 import {
   assetMatchesPath,
   serializeAssetMetadata
-} from '../../images/image-library';
+} from '../../media/media-library';
 
 export interface EditorSnapshot {
-  coverImage: ImageAsset | null;
+  coverImage: MediaAsset | null;
   editState: DocumentEditState;
   fields: DocumentFields;
-  images: ImageAsset[];
+  media: MediaAsset[];
   paperWidth: number;
   previewActive: boolean;
 }
 
 export interface CreateEditorSnapshotOptions {
-  coverImage: ImageAsset | null;
+  coverImage: MediaAsset | null;
   editState: DocumentEditState;
   fields: Map<EditorFieldName, EditorFieldElement>;
-  images: ImageAsset[];
+  media: MediaAsset[];
   paperWidth: number;
   previewActive: boolean;
 }
 
 export interface UpdateDocumentFromEditorOptions {
-  coverImage: ImageAsset | null;
+  coverImage: MediaAsset | null;
   editState: DocumentEditState;
   fields: Map<EditorFieldName, EditorFieldElement>;
   paperWidth: number;
@@ -45,7 +45,7 @@ export function createEditorSnapshot({
   coverImage,
   editState,
   fields,
-  images,
+  media,
   paperWidth,
   previewActive
 }: CreateEditorSnapshotOptions): EditorSnapshot {
@@ -53,7 +53,7 @@ export function createEditorSnapshot({
     coverImage,
     editState,
     fields: readEditorFields(fields),
-    images: [...images],
+    media: [...media],
     paperWidth,
     previewActive
   };
@@ -64,7 +64,7 @@ export function getEditorSnapshotSignature(snapshot: EditorSnapshot) {
     coverImage: getAssetSignature(snapshot.coverImage),
     editState: snapshot.editState,
     fields: snapshot.fields,
-    images: (snapshot.images || []).map(getAssetSignature),
+    media: (snapshot.media || []).map(getAssetSignature),
     paperWidth: snapshot.paperWidth,
     previewActive: snapshot.previewActive
   };
@@ -103,7 +103,7 @@ export function updateDocumentFromEditor(
 
 function getNextCoverImageMetadata(
   existingCoverImage: AssetMetadata | null,
-  coverImage: ImageAsset | null,
+  coverImage: MediaAsset | null,
   imageFieldValue: string
 ): AssetMetadata | null {
   const nextCoverImage = serializeAssetMetadata(coverImage);
@@ -121,7 +121,7 @@ export function writeEditorFields(
   }
 }
 
-function getAssetSignature(asset: AssetMetadata | ImageAsset | null | undefined) {
+function getAssetSignature(asset: AssetMetadata | MediaAsset | null | undefined) {
   if (!asset) return null;
   return {
     id: asset.id,

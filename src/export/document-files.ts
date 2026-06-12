@@ -12,24 +12,24 @@ import {
   normalizeDocumentAssetPath
 } from '../documents/document-markdown';
 import { dedupeFileName, getFileExtension } from '../shared/text';
-import type { ImageAsset, DocumentRecord, ZipFileEntry } from '../shared/types';
+import type { MediaAsset, DocumentRecord, ZipFileEntry } from '../shared/types';
 
 const textEncoder = new TextEncoder();
 
-export type ResolveDocumentAssets = (documentRecords: DocumentRecord[]) => Promise<ImageAsset[]>;
-export type ReadAssetData = (asset: ImageAsset) => Promise<Uint8Array<ArrayBuffer>>;
+export type ResolveDocumentAssets = (documentRecords: DocumentRecord[]) => Promise<MediaAsset[]>;
+export type ReadAssetData = (asset: MediaAsset) => Promise<Uint8Array<ArrayBuffer>>;
 
 export interface DocumentZipFilesOptions {
   documentRecord: DocumentRecord;
   folderName?: string;
-  randomizeImageNames?: boolean;
+  randomizeMediaNames?: boolean;
   readAssetData?: ReadAssetData;
   resolveAssets: ResolveDocumentAssets;
 }
 
 export interface DocumentCollectionZipFilesOptions {
   documentRecords: DocumentRecord[];
-  randomizeImageNames?: boolean;
+  randomizeMediaNames?: boolean;
   resolveAssets: ResolveDocumentAssets;
 }
 
@@ -41,7 +41,7 @@ export interface EditableFolderFilesOptions {
 
 export interface PortableDocumentFilesOptions {
   documentRecords: DocumentRecord[];
-  randomizeImageNames?: boolean;
+  randomizeMediaNames?: boolean;
   readAssetData?: ReadAssetData;
   resolveAssets: ResolveDocumentAssets;
 }
@@ -49,13 +49,13 @@ export interface PortableDocumentFilesOptions {
 export async function createDocumentZipFilesForDocument({
   documentRecord,
   folderName = getDocumentFolderName(documentRecord),
-  randomizeImageNames = false,
+  randomizeMediaNames = false,
   readAssetData = readFileAssetData,
   resolveAssets
 }: DocumentZipFilesOptions): Promise<ZipFileEntry[]> {
   const assetFiles = await resolveAssets([documentRecord]);
   const assetPathMap = createExportAssetPathMap(assetFiles, {
-    randomize: randomizeImageNames
+    randomize: randomizeMediaNames
   });
   const files: ZipFileEntry[] = [{
     data: textEncoder.encode(buildDocumentMarkdown({ assetPathMap, documentRecord })),
@@ -76,7 +76,7 @@ export async function createDocumentZipFilesForDocument({
 
 export async function createDocumentCollectionZipFiles({
   documentRecords,
-  randomizeImageNames = false,
+  randomizeMediaNames = false,
   resolveAssets
 }: DocumentCollectionZipFilesOptions): Promise<ZipFileEntry[]> {
   const usedFolders = new Set<string>();
@@ -88,7 +88,7 @@ export async function createDocumentCollectionZipFiles({
     files.push(...await createDocumentZipFilesForDocument({
       documentRecord,
       folderName,
-      randomizeImageNames,
+      randomizeMediaNames,
       resolveAssets
     }));
   }
@@ -98,7 +98,7 @@ export async function createDocumentCollectionZipFiles({
 
 export async function createPortableDocumentFiles({
   documentRecords,
-  randomizeImageNames = false,
+  randomizeMediaNames = false,
   readAssetData = readFileAssetData,
   resolveAssets
 }: PortableDocumentFilesOptions): Promise<ZipFileEntry[]> {
@@ -126,7 +126,7 @@ export async function createPortableDocumentFiles({
     const assetOutputPathMap = createPortableAssetOutputPathMap(assetFiles, {
       assignedAssetPaths,
       markdownPath,
-      randomizeImageNames,
+      randomizeMediaNames,
       usedAssetPaths,
       useSourcePaths: documentRecord.source?.mode === 'folder' || documentRecord.source?.mode === 'editable-folder'
     });
@@ -190,27 +190,27 @@ export async function createEditableFileDocumentFile({
   };
 }
 
-async function readFileAssetData(asset: ImageAsset): Promise<Uint8Array<ArrayBuffer>> {
+async function readFileAssetData(asset: MediaAsset): Promise<Uint8Array<ArrayBuffer>> {
   return new Uint8Array(await asset.file.arrayBuffer());
 }
 
 function createPortableAssetOutputPathMap(
-  assets: ImageAsset[],
+  assets: MediaAsset[],
   {
     assignedAssetPaths,
     markdownPath,
-    randomizeImageNames,
+    randomizeMediaNames,
     usedAssetPaths,
     useSourcePaths
   }: {
     assignedAssetPaths: Map<string, string>;
     markdownPath: string;
-    randomizeImageNames: boolean;
+    randomizeMediaNames: boolean;
     usedAssetPaths: Set<string>;
     useSourcePaths: boolean;
   }
-): Map<ImageAsset, string> {
-  const map = new Map<ImageAsset, string>();
+): Map<MediaAsset, string> {
+  const map = new Map<MediaAsset, string>();
   const markdownBase = getFileStem(getPathBasename(markdownPath)) || 'document';
   const assetDirectory = normalizeDocumentAssetPath(`${getPathDirectory(markdownPath)}/${markdownBase}-assets`);
   const usedNames = new Set<string>();
@@ -226,7 +226,7 @@ function createPortableAssetOutputPathMap(
     const sourcePath = normalizeDocumentAssetPath(asset.sourcePath);
     const preferredPath = useSourcePaths && sourcePath
       ? sourcePath
-      : normalizeDocumentAssetPath(`${assetDirectory}/${getPortableAssetFileName(asset, randomizeImageNames, usedNames)}`);
+      : normalizeDocumentAssetPath(`${assetDirectory}/${getPortableMediaFileName(asset, randomizeMediaNames, usedNames)}`);
     const outputPath = dedupeFilePath(preferredPath || asset.name, usedAssetPaths);
     usedAssetPaths.add(outputPath);
     assignedAssetPaths.set(assetKey, outputPath);
@@ -236,14 +236,14 @@ function createPortableAssetOutputPathMap(
   return map;
 }
 
-function getAssetOutputKey(asset: ImageAsset): string {
+function getAssetOutputKey(asset: MediaAsset): string {
   return normalizeDocumentAssetPath(asset.sourcePath || asset.path || asset.name);
 }
 
 function createPortableAssetPathMap(
-  assets: ImageAsset[],
+  assets: MediaAsset[],
   markdownPath: string,
-  assetOutputPathMap: Map<ImageAsset, string>
+  assetOutputPathMap: Map<MediaAsset, string>
 ): Map<string, string> {
   const map = new Map<string, string>();
   for (const asset of assets) {
@@ -255,7 +255,7 @@ function createPortableAssetPathMap(
 }
 
 async function createEmbeddedAssetPathMap(
-  assets: ImageAsset[],
+  assets: MediaAsset[],
   readAssetData: ReadAssetData
 ): Promise<Map<string, string>> {
   const map = new Map<string, string>();
@@ -265,7 +265,7 @@ async function createEmbeddedAssetPathMap(
   return map;
 }
 
-function addAssetPathAliases(map: Map<string, string>, asset: ImageAsset, outputPath: string): void {
+function addAssetPathAliases(map: Map<string, string>, asset: MediaAsset, outputPath: string): void {
   for (const candidate of [asset.path, asset.sourcePath]) {
     const alias = normalizeDocumentAssetPath(candidate);
     if (!alias) continue;
@@ -299,8 +299,8 @@ function dedupeFilePath(path: string, usedPaths: Set<string>): string {
   return candidate;
 }
 
-function getPortableAssetFileName(asset: ImageAsset, randomizeImageNames: boolean, usedNames: Set<string>): string {
-  const fileName = randomizeImageNames ? createRandomAssetFileName(asset.name, usedNames) : asset.name;
+function getPortableMediaFileName(asset: MediaAsset, randomizeMediaNames: boolean, usedNames: Set<string>): string {
+  const fileName = randomizeMediaNames ? createRandomAssetFileName(asset.name, usedNames) : asset.name;
   const deduped = dedupeFileName(fileName, Array.from(usedNames));
   usedNames.add(deduped);
   return deduped;

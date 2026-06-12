@@ -87,19 +87,45 @@
       <section class="writing-column" aria-labelledby="editor-title">
         <div class="toolbar" aria-label="Writing tools">
           <div class="toolbar-group">
-            <button type="button" data-insert="heading">Heading</button>
-            <button type="button" data-insert="bold">Bold</button>
-            <button type="button" data-insert="italic">Italic</button>
-            <button type="button" data-insert="strike">Strike</button>
-            <button type="button" data-insert="quote">Quote</button>
-            <button type="button" data-insert="list">List</button>
-            <button type="button" data-insert="ordered-list">Ordered</button>
-            <button type="button" data-insert="task-list">Task</button>
-            <button type="button" data-insert="link">Link</button>
-            <button type="button" data-insert="image">Image</button>
-            <button type="button" data-insert="rule">Rule</button>
-            <button type="button" data-insert="table">Table</button>
-            <button type="button" data-insert="code">Code</button>
+            <button type="button" data-insert="heading" data-tooltip="Heading" aria-label="Heading">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M6 5v14M18 5v14M6 12h12"></path></svg>
+            </button>
+            <button type="button" data-insert="bold" data-tooltip="Bold" aria-label="Bold">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M8 5h5.2a3.2 3.2 0 0 1 0 6.4H8M8 11.4h6a3.8 3.8 0 0 1 0 7.6H8V5"></path></svg>
+            </button>
+            <button type="button" data-insert="italic" data-tooltip="Italic" aria-label="Italic">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M10 5h8M6 19h8M14 5l-4 14"></path></svg>
+            </button>
+            <button type="button" data-insert="strike" data-tooltip="Strikethrough" aria-label="Strikethrough">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M7 7.2C8 5.8 9.7 5 12 5c2.5 0 4.2.9 5 2.6M5 12h14M17 16.8c-1 1.5-2.7 2.2-5 2.2-2.6 0-4.5-.9-5.5-2.8"></path></svg>
+            </button>
+            <button type="button" data-insert="quote" data-tooltip="Quote" aria-label="Quote">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M8 9h4v4.2c0 2.7-1.3 4.6-4 5.8M16 9h4v4.2c0 2.7-1.3 4.6-4 5.8"></path></svg>
+            </button>
+            <button type="button" data-insert="list" data-tooltip="Bullet list" aria-label="Bullet list">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M8 7h11M8 12h11M8 17h11"></path><path d="M4.5 7h.01M4.5 12h.01M4.5 17h.01"></path></svg>
+            </button>
+            <button type="button" data-insert="ordered-list" data-tooltip="Ordered list" aria-label="Ordered list">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M10 7h10M10 12h10M10 17h10"></path><path d="M4 6h1.6v3M4 9h3M4 13h2.6L4 16h3"></path></svg>
+            </button>
+            <button type="button" data-insert="task-list" data-tooltip="Task list" aria-label="Task list">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M9 7h11M9 12h11M9 17h11M3.5 7l1.2 1.2L7 5.8M4 12h2.5M4 17h2.5"></path></svg>
+            </button>
+            <button type="button" data-insert="link" data-tooltip="Link" aria-label="Link">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M9.5 14.5l5-5M10.5 6.5l1.2-1.2a4 4 0 0 1 5.6 5.6l-1.7 1.7M13.5 17.5l-1.2 1.2a4 4 0 0 1-5.6-5.6l1.7-1.7"></path></svg>
+            </button>
+            <button type="button" data-insert="image" data-tooltip="Image" aria-label="Image">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M5 6h14v12H5zM8 15l3-3 2.2 2.2L15 12l3 3M8.5 9.5h.01"></path></svg>
+            </button>
+            <button type="button" data-insert="rule" data-tooltip="Horizontal rule" aria-label="Horizontal rule">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M5 12h14"></path></svg>
+            </button>
+            <button type="button" data-insert="table" data-tooltip="Table" aria-label="Table">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M4.5 5.5h15v13h-15zM4.5 10h15M4.5 14.5h15M9.5 5.5v13M14.5 5.5v13"></path></svg>
+            </button>
+            <button type="button" data-insert="code" data-tooltip="Code" aria-label="Code">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M9 8l-4 4 4 4M15 8l4 4-4 4"></path></svg>
+            </button>
           </div>
           <button class="preview-toggle" type="button" data-preview-toggle aria-pressed="false" data-tooltip="Preview">
             <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
@@ -218,16 +244,16 @@
             </div>
           </section>
 
-          <section class="sidebar-section" aria-labelledby="images-title">
+          <section class="sidebar-section" aria-labelledby="media-title">
             <div class="section-heading">
-              <h3 id="images-title">Images</h3>
+              <h3 id="media-title">Media</h3>
             </div>
-            <p class="helper">Images are exported with this document.</p>
+            <p class="helper">Images and videos are exported with this document.</p>
             <label class="file-drop file-drop-small">
-              <input type="file" accept="image/*" multiple data-image-picker>
-              <span>Add images</span>
+              <input type="file" accept="image/*,video/*" multiple data-media-picker>
+              <span>Add media</span>
             </label>
-            <div class="image-list" data-image-list></div>
+            <div class="media-list" data-media-list></div>
           </section>
 
           <section class="sidebar-section" aria-labelledby="ai-title">
@@ -249,9 +275,9 @@
               Downloads portable Markdown document folders.
             </p>
             <label class="checkbox-field">
-              <input type="checkbox" data-randomize-image-names>
+              <input type="checkbox" data-randomize-media-names>
               <span>
-                <strong>Randomize image file names</strong>
+                <strong>Randomize media file names</strong>
                 <small>Applies only the downloaded zip file.</small>
               </span>
             </label>
@@ -297,16 +323,16 @@
 
     <div class="tooltip-layer" data-tooltip-layer role="tooltip" hidden></div>
 
-    <template data-image-row-template>
-      <article class="image-row">
+    <template data-media-row-template>
+      <article class="media-row">
         <img alt="">
         <div>
-          <strong data-image-name></strong>
-          <span class="image-meta" data-image-meta></span>
-          <div class="image-actions">
-            <button type="button" data-insert-image>Insert</button>
-            <button type="button" data-insert-inline-image>Inline</button>
-            <a data-download-image>Download</a>
+          <strong data-media-name></strong>
+          <span class="media-meta" data-media-meta></span>
+          <div class="media-actions">
+            <button type="button" data-insert-media>Insert</button>
+            <button type="button" data-insert-inline-media>Inline</button>
+            <a data-download-media>Download</a>
           </div>
         </div>
       </article>

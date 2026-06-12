@@ -1,4 +1,4 @@
-import type { ImageAsset } from '../shared/types';
+import type { MediaAsset } from '../shared/types';
 import {
   dedupeFileName,
   sanitizeFileName
@@ -20,21 +20,21 @@ export interface CreateDocumentImportPlanOptions {
 }
 
 export interface ImportedAssetRegistry {
-  fileAssets: Map<File, ImageAsset>;
-  pathAssets: Map<string, ImageAsset>;
+  fileAssets: Map<File, MediaAsset>;
+  pathAssets: Map<string, MediaAsset>;
   usedNames: Set<string>;
 }
 
 export interface CreateImportAssetRegistryOptions {
   existingAssetNames?: string[];
-  existingAssets?: ImageAsset[];
+  existingAssets?: MediaAsset[];
 }
 
 export interface DocumentImportPlan {
   assetPathMap: AssetPathMap;
-  assets: ImageAsset[];
-  coverImage: ImageAsset | null;
-  images: ImageAsset[];
+  assets: MediaAsset[];
+  coverImage: MediaAsset | null;
+  media: MediaAsset[];
 }
 
 export function createImportAssetRegistry({
@@ -65,20 +65,20 @@ export function createDocumentImportPlan({
   getFilePath,
   markdownFile
 }: CreateDocumentImportPlanOptions): DocumentImportPlan {
-  const imageFiles = files.filter(isImportImageFile);
-  const fileIndex = createImportFileIndex(imageFiles, getFilePath);
+  const imageFileIndex = createImportFileIndex(files.filter(isImportImageFile), getFilePath);
+  const mediaFileIndex = createImportFileIndex(files.filter(isImportMediaFile), getFilePath);
   const assetPathMap: AssetPathMap = new Map();
   const registry = assetRegistry || createImportAssetRegistry({ existingAssetNames });
   for (const name of existingAssetNames) {
     if (name) registry.usedNames.add(name);
   }
-  const createdAssets = new Set<ImageAsset>();
-  const bodyImages = new Set<ImageAsset>();
+  const createdAssets = new Set<MediaAsset>();
+  const bodyMedia = new Set<MediaAsset>();
 
-  let importedCoverImage: ImageAsset | null = null;
+  let importedCoverImage: MediaAsset | null = null;
   const imageReference = String(frontmatter.image || '').trim();
   if (imageReference) {
-    const imageFile = resolveImportFileForReference(imageReference, fileIndex, markdownFile, getFilePath);
+    const imageFile = resolveImportFileForReference(imageReference, imageFileIndex, markdownFile, getFilePath);
     if (imageFile) {
       const { asset, created } = getOrCreateImportedAsset(imageFile, imageReference, registry, createAssetId, getFilePath);
       if (created) createdAssets.add(asset);
@@ -87,21 +87,21 @@ export function createDocumentImportPlan({
     }
   }
 
-  for (const imageReference of getImportedMarkdownImageReferences(body)) {
-    const imageFile = resolveImportFileForReference(imageReference, fileIndex, markdownFile, getFilePath);
-    if (!imageFile) continue;
+  for (const mediaReference of getImportedMarkdownMediaReferences(body)) {
+    const mediaFile = resolveImportFileForReference(mediaReference, mediaFileIndex, markdownFile, getFilePath);
+    if (!mediaFile) continue;
 
-    const { asset, created } = getOrCreateImportedAsset(imageFile, imageReference, registry, createAssetId, getFilePath);
+    const { asset, created } = getOrCreateImportedAsset(mediaFile, mediaReference, registry, createAssetId, getFilePath);
     if (created) createdAssets.add(asset);
-    if (asset !== importedCoverImage) bodyImages.add(asset);
-    addImportedAssetPathAlias(assetPathMap, imageReference, asset.path);
+    if (asset !== importedCoverImage) bodyMedia.add(asset);
+    addImportedAssetPathAlias(assetPathMap, mediaReference, asset.path);
   }
 
   return {
     assetPathMap,
     assets: Array.from(createdAssets),
     coverImage: importedCoverImage,
-    images: Array.from(bodyImages)
+    media: Array.from(bodyMedia)
   };
 }
 
@@ -125,10 +125,10 @@ export function rewriteImportedMarkdownAssetPaths(markdown: string, assetPathMap
   });
 }
 
-export function getImportedMarkdownImageReferences(markdown: string): string[] {
+export function getImportedMarkdownMediaReferences(markdown: string): string[] {
   const references: string[] = [];
-  const imagePattern = /!\[[^\]]*]\(([^)]+)\)/g;
-  for (const match of String(markdown || '').matchAll(imagePattern)) {
+  const mediaPattern = /!\[[^\]]*]\(([^)]+)\)/g;
+  for (const match of String(markdown || '').matchAll(mediaPattern)) {
     const reference = match[1].trim();
     if (isImportableAssetReference(reference)) {
       references.push(reference);
@@ -173,6 +173,10 @@ export function isImportImageFile(file: File): boolean {
   return file.type.startsWith('image/') || /\.(?:png|jpe?g|gif|webp|avif|svg)$/i.test(file.name);
 }
 
+export function isImportMediaFile(file: File): boolean {
+  return isImportImageFile(file) || file.type.startsWith('video/') || /\.(?:mp4|webm|ogg|ogv|mov|m4v)$/i.test(file.name);
+}
+
 function createImportFileIndex(files: File[], getFilePath: (file: File) => string): Map<string, File> {
   const index = new Map<string, File>();
 
@@ -212,7 +216,7 @@ function getOrCreateImportedAsset(
   registry: ImportedAssetRegistry,
   createAssetId: () => string,
   getFilePath: (file: File) => string
-): { asset: ImageAsset; created: boolean } {
+): { asset: MediaAsset; created: boolean } {
   const referenceFileName = normalizeImportedAssetReference(reference).split('/').pop() || file.name;
   const sourcePath = normalizeImportPath(getFilePath(file) || file.name);
   const existingAsset = registry.fileAssets.get(file) || registry.pathAssets.get(sourcePath);
@@ -237,7 +241,7 @@ function getOrCreateImportedAsset(
   return { asset, created: true };
 }
 
-function registerImportedAssetPath(asset: ImageAsset, registry: ImportedAssetRegistry): void {
+function registerImportedAssetPath(asset: MediaAsset, registry: ImportedAssetRegistry): void {
   for (const path of [asset.path, asset.sourcePath]) {
     const key = normalizeImportPath(path || '');
     if (key && !registry.pathAssets.has(key)) {

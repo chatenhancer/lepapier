@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { createEditorSession } from './session';
-import type { DocumentRecord, ImageAsset } from '../shared/types';
+import type { DocumentRecord, MediaAsset } from '../shared/types';
 
 describe('editor session', () => {
   it('owns document, preview, and edit state', () => {
@@ -20,7 +20,7 @@ describe('editor session', () => {
 
   it('restores snapshot state without leaking mutable arrays', () => {
     const session = createTestSession();
-    const image = createImage('hero.png');
+    const image = createMedia('hero.png');
 
     session.restoreSnapshotState({
       coverImage: image,
@@ -30,12 +30,12 @@ describe('editor session', () => {
         tags: false,
         title: true
       },
-      images: [image],
+      media: [image],
       previewActive: true
     });
 
     expect(session.getCoverImage()).toBe(image);
-    expect(session.selectedImages).toEqual([image]);
+    expect(session.selectedMedia).toEqual([image]);
     expect(session.getEditState()).toEqual({
       description: true,
       slug: false,
@@ -50,14 +50,14 @@ describe('editor session', () => {
     const nextDocument = session.createDefaultDocument({ id: 'next' });
 
     session.addDocument(session.createDefaultDocument({ id: 'old' }));
-    session.selectedImages.push(createImage('old.png'));
+    session.selectedMedia.push(createMedia('old.png'));
     session.setPreviewActive(true);
     session.markFieldEdited('description');
     session.resetWorkspace(nextDocument);
 
     expect(session.documents).toEqual([nextDocument]);
     expect(session.getActiveDocumentId()).toBe('next');
-    expect(session.selectedImages).toEqual([]);
+    expect(session.selectedMedia).toEqual([]);
     expect(session.getCoverImage()).toBeNull();
     expect(session.getEditState()).toEqual({
       description: false,
@@ -79,7 +79,7 @@ function createTestSession() {
   });
 }
 
-function createImage(name: string): ImageAsset {
+function createMedia(name: string): MediaAsset {
   return {
     file: new File(['image'], name, { type: 'image/png' }),
     id: name,

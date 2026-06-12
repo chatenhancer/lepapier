@@ -1,6 +1,6 @@
 import {
   serializeAssetMetadata
-} from '../../images/image-library';
+} from '../../media/media-library';
 import {
   collectExportAssets,
   resolveExportAsset
@@ -17,13 +17,13 @@ import {
   sanitizeFileName
 } from '../../shared/text';
 import type {
-  ImageAsset,
+  MediaAsset,
   DocumentRecord,
   EditableFolderState
 } from '../../shared/types';
 
 export interface EditorExportAssetWorkflow {
-  getUniqueAssetFiles(documentRecords: DocumentRecord[]): Promise<ImageAsset[]>;
+  getUniqueAssetFiles(documentRecords: DocumentRecord[]): Promise<MediaAsset[]>;
 }
 
 export interface EditorExportAssetWorkflowOptions {
@@ -33,16 +33,16 @@ export interface EditorExportAssetWorkflowOptions {
   getActiveDocumentId(): string;
   getCurrentAssetNames(): string[];
   getFileSourcePath(file: File): string;
-  getLiveAsset(metadata: { path?: string; sourcePath?: string } | null | undefined): ImageAsset | null;
-  isImageFile(file: File): boolean;
+  getLiveAsset(metadata: { path?: string; sourcePath?: string } | null | undefined): MediaAsset | null;
+  isMediaFile(file: File): boolean;
   logError(message: string, error: unknown, details?: Record<string, unknown>): void;
   readEditableFolderFile(directoryHandle: FileSystemDirectoryHandle, path: string): Promise<File>;
   renderCover(): void;
-  renderImages(): void;
-  restoreSavedAsset(metadata: DocumentRecord['coverImage']): Promise<ImageAsset | null>;
-  saveAsset(asset: ImageAsset): Promise<void>;
-  selectedImages: ImageAsset[];
-  setCoverImage(asset: ImageAsset): void;
+  renderMedia(): void;
+  restoreSavedAsset(metadata: DocumentRecord['coverImage']): Promise<MediaAsset | null>;
+  saveAsset(asset: MediaAsset): Promise<void>;
+  selectedMedia: MediaAsset[];
+  setCoverImage(asset: MediaAsset): void;
 }
 
 export function createEditorExportAssetWorkflow({
@@ -53,17 +53,17 @@ export function createEditorExportAssetWorkflow({
   getCurrentAssetNames,
   getFileSourcePath,
   getLiveAsset,
-  isImageFile,
+  isMediaFile,
   logError,
   readEditableFolderFile,
   renderCover,
-  renderImages,
+  renderMedia,
   restoreSavedAsset,
   saveAsset,
-  selectedImages,
+  selectedMedia,
   setCoverImage
 }: EditorExportAssetWorkflowOptions): EditorExportAssetWorkflow {
-  const createEditableFolderAsset = (file: File, reference: string): ImageAsset => {
+  const createEditableFolderAsset = (file: File, reference: string): MediaAsset => {
     const sourcePath = getFileSourcePath(file);
     const referencePath = normalizeImportedAssetReference(reference) || normalizeImportedAssetReference(sourcePath);
     const referenceFileName = referencePath.split('/').pop() || sourcePath.split('/').pop() || file.name;
@@ -78,11 +78,11 @@ export function createEditorExportAssetWorkflow({
     };
   };
 
-  const trackRecoveredEditableAsset = (asset: ImageAsset, documentRecord: DocumentRecord, reference: string) => {
+  const trackRecoveredEditableAsset = (asset: MediaAsset, documentRecord: DocumentRecord, reference: string) => {
     if (getLiveAsset({ path: asset.path }) || getLiveAsset({ path: asset.sourcePath })) return;
 
-    const imagePath = getDocumentFieldValue(documentRecord, 'image');
-    if (normalizeDocumentAssetPath(imagePath) === normalizeDocumentAssetPath(reference)) {
+    const mediaPath = getDocumentFieldValue(documentRecord, 'image');
+    if (normalizeDocumentAssetPath(mediaPath) === normalizeDocumentAssetPath(reference)) {
       documentRecord.coverImage = serializeAssetMetadata(asset);
       if (documentRecord.id === getActiveDocumentId()) {
         setCoverImage(asset);
@@ -91,24 +91,24 @@ export function createEditorExportAssetWorkflow({
       return;
     }
 
-    selectedImages.push(asset);
-    renderImages();
+    selectedMedia.push(asset);
+    renderMedia();
   };
 
-  const restoreAssetFromEditableFolder = async (path: string, documentRecord: DocumentRecord): Promise<ImageAsset | null> => {
+  const restoreAssetFromEditableFolder = async (path: string, documentRecord: DocumentRecord): Promise<MediaAsset | null> => {
     const editableFolder = editableFolders.get(documentRecord.id);
     if (!editableFolder?.directoryHandle) return null;
 
     try {
-      const imageFile = await readEditableFolderFile(editableFolder.directoryHandle, path);
-      if (!isImageFile(imageFile)) return null;
+      const mediaFile = await readEditableFolderFile(editableFolder.directoryHandle, path);
+      if (!isMediaFile(mediaFile)) return null;
 
-      const asset = createEditableFolderAsset(imageFile, normalizeDocumentAssetPath(path));
+      const asset = createEditableFolderAsset(mediaFile, normalizeDocumentAssetPath(path));
       trackRecoveredEditableAsset(asset, documentRecord, path);
       await saveAsset(asset);
       return asset;
     } catch (error) {
-      logError('Could not restore a referenced image from the editable folder.', error, {
+      logError('Could not restore a referenced media asset from the editable folder.', error, {
         documentId: documentRecord.id,
         path
       });
@@ -116,7 +116,7 @@ export function createEditorExportAssetWorkflow({
     }
   };
 
-  const resolveAssetForPath = async (path: string, documentRecord: DocumentRecord): Promise<ImageAsset | null> => {
+  const resolveAssetForPath = async (path: string, documentRecord: DocumentRecord): Promise<MediaAsset | null> => {
     return await resolveExportAsset(path, documentRecord, {
       documents,
       getLiveAsset: (assetPath) => getLiveAsset({ path: assetPath }),

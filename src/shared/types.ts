@@ -5,7 +5,7 @@ export interface AssetMetadata {
   sourcePath?: string;
 }
 
-export interface ImageAsset {
+export interface MediaAsset {
   file: File;
   id: string;
   name: string;
@@ -63,8 +63,8 @@ export interface DocumentRecord {
 export interface WorkspaceDraft {
   activeDocumentId: string;
   documents: DocumentRecord[];
-  images?: AssetMetadata[];
-  randomizeImageNames?: boolean;
+  media?: AssetMetadata[];
+  randomizeMediaNames?: boolean;
   smartPunctuation?: boolean;
   version?: number;
 }

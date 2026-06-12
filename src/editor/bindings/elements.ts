@@ -22,9 +22,9 @@ export interface EditorElements {
   downloadButtons: HTMLButtonElement[];
   editorHeader: HTMLElement;
   fieldElements: EditorFieldElement[];
-  imageList: HTMLElement;
-  imagePicker: HTMLInputElement;
-  imageTemplate: HTMLTemplateElement;
+  mediaList: HTMLElement;
+  mediaPicker: HTMLInputElement;
+  mediaTemplate: HTMLTemplateElement;
   insertButtons: HTMLButtonElement[];
   mobileDocumentsToggle: HTMLButtonElement;
   mobileSettingsToggle: HTMLButtonElement;
@@ -42,7 +42,7 @@ export interface EditorElements {
   paperResizeHandles: HTMLElement[];
   preview: HTMLElement;
   previewToggle: HTMLButtonElement;
-  randomizeImageNamesInput: HTMLInputElement;
+  randomizeMediaNamesInput: HTMLInputElement;
   resetButton: HTMLButtonElement;
   saveState: HTMLElement;
   selectAllDocumentsInput: HTMLInputElement;
@@ -75,9 +75,9 @@ export function getEditorElements(): EditorElements {
     downloadButtons: queryElements<HTMLButtonElement>('[data-download]'),
     editorHeader: requireElement<HTMLElement>('.editor-header'),
     fieldElements: queryElements<EditorFieldElement>('[data-field]'),
-    imageList: requireElement<HTMLElement>('[data-image-list]'),
-    imagePicker: requireElement<HTMLInputElement>('[data-image-picker]'),
-    imageTemplate: requireElement<HTMLTemplateElement>('[data-image-row-template]'),
+    mediaList: requireElement<HTMLElement>('[data-media-list]'),
+    mediaPicker: requireElement<HTMLInputElement>('[data-media-picker]'),
+    mediaTemplate: requireElement<HTMLTemplateElement>('[data-media-row-template]'),
     insertButtons: queryElements<HTMLButtonElement>('[data-insert]'),
     mobileDocumentsToggle: requireElement<HTMLButtonElement>('[data-mobile-panel-toggle="documents"]'),
     mobileSettingsToggle: requireElement<HTMLButtonElement>('[data-mobile-panel-toggle="settings"]'),
@@ -95,7 +95,7 @@ export function getEditorElements(): EditorElements {
     paperResizeHandles: queryElements<HTMLElement>('[data-paper-resize]'),
     preview: requireElement<HTMLElement>('[data-preview]'),
     previewToggle: requireElement<HTMLButtonElement>('[data-preview-toggle]'),
-    randomizeImageNamesInput: requireElement<HTMLInputElement>('[data-randomize-image-names]'),
+    randomizeMediaNamesInput: requireElement<HTMLInputElement>('[data-randomize-media-names]'),
     resetButton: requireElement<HTMLButtonElement>('[data-reset]'),
     saveState: requireElement<HTMLElement>('[data-save-state]'),
     selectAllDocumentsInput: requireElement<HTMLInputElement>('[data-select-all-documents]'),

@@ -17,6 +17,16 @@ export interface GetPreviewSelectionSourceRangeOptions {
   selection?: Selection | null;
 }
 
+interface RenderedSelectionSourceRangeOptions {
+  body: string;
+  range: Range;
+  root: Node;
+  selectedText: string;
+  selection: Selection;
+  sourceEnd: number;
+  sourceStart: number;
+}
+
 export function getPreviewSelectionSourceRange({
   body,
   preview,
@@ -48,24 +58,15 @@ export function getPreviewSelectionSourceRange({
     return null;
   }
 
-  const selectedText = selection.toString();
-  if (!selectedText.trim()) return null;
-
-  const sourceStart = Number(sourceElement.dataset.sourceStart);
-  const sourceEnd = Number(sourceElement.dataset.sourceEnd);
-  const renderedStart = getRenderedOffset(sourceElement, range.startContainer, range.startOffset);
-  const renderedEnd = getRenderedOffset(sourceElement, range.endContainer, range.endOffset);
-  const sourceRange = findRenderedSelectionInSource(body.slice(sourceStart, sourceEnd), selectedText, renderedStart, renderedEnd);
-  if (!sourceRange) return null;
-
-  return {
-    absoluteEnd: sourceStart + sourceRange.end,
-    absoluteStart: sourceStart + sourceRange.start,
+  return getRenderedSelectionSourceRange({
     body,
+    range,
+    root: sourceElement,
+    selectedText: selection.toString(),
     selection,
-    sourceEnd,
-    sourceStart
-  };
+    sourceEnd: Number(sourceElement.dataset.sourceEnd),
+    sourceStart: Number(sourceElement.dataset.sourceStart)
+  });
 }
 
 function getSourceElement(node: Node): HTMLElement | null {
@@ -116,19 +117,16 @@ function getMediaCopySelectionSourceRange({
 
   const sourceStart = copyRange.start + relativeSourceStart;
   const sourceEnd = copyRange.start + relativeSourceEnd;
-  const renderedStart = getRenderedOffset(sourceElement, range.startContainer, range.startOffset);
-  const renderedEnd = getRenderedOffset(sourceElement, range.endContainer, range.endOffset);
-  const sourceRange = findRenderedSelectionInSource(body.slice(sourceStart, sourceEnd), selectedText, renderedStart, renderedEnd);
-  if (!sourceRange) return null;
 
-  return {
-    absoluteEnd: sourceStart + sourceRange.end,
-    absoluteStart: sourceStart + sourceRange.start,
+  return getRenderedSelectionSourceRange({
     body,
+    range,
+    root: sourceElement,
+    selectedText,
     selection,
     sourceEnd,
     sourceStart
-  };
+  });
 }
 
 function getMediaCopyRootSelectionSourceRange({
@@ -148,18 +146,41 @@ function getMediaCopyRootSelectionSourceRange({
 }): PreviewSelectionSourceRange | null {
   if (!mediaCopy.contains(range.startContainer) || !mediaCopy.contains(range.endContainer)) return null;
 
-  const renderedStart = getRenderedOffset(mediaCopy, range.startContainer, range.startOffset);
-  const renderedEnd = getRenderedOffset(mediaCopy, range.endContainer, range.endOffset);
-  const sourceRange = findRenderedSelectionInSource(body.slice(copyRange.start, copyRange.end), selectedText, renderedStart, renderedEnd);
-  if (!sourceRange) return null;
-
-  return {
-    absoluteEnd: copyRange.start + sourceRange.end,
-    absoluteStart: copyRange.start + sourceRange.start,
+  return getRenderedSelectionSourceRange({
     body,
+    range,
+    root: mediaCopy,
+    selectedText,
     selection,
     sourceEnd: copyRange.end,
     sourceStart: copyRange.start
+  });
+}
+
+function getRenderedSelectionSourceRange({
+  body,
+  range,
+  root,
+  selectedText,
+  selection,
+  sourceEnd,
+  sourceStart
+}: RenderedSelectionSourceRangeOptions): PreviewSelectionSourceRange | null {
+  if (!selectedText.trim()) return null;
+  if (!Number.isInteger(sourceStart) || !Number.isInteger(sourceEnd)) return null;
+
+  const renderedStart = getRenderedOffset(root, range.startContainer, range.startOffset);
+  const renderedEnd = getRenderedOffset(root, range.endContainer, range.endOffset);
+  const sourceRange = findRenderedSelectionInSource(body.slice(sourceStart, sourceEnd), selectedText, renderedStart, renderedEnd);
+  if (!sourceRange) return null;
+
+  return {
+    absoluteEnd: sourceStart + sourceRange.end,
+    absoluteStart: sourceStart + sourceRange.start,
+    body,
+    selection,
+    sourceEnd,
+    sourceStart
   };
 }
 

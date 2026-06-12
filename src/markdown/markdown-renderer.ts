@@ -273,18 +273,55 @@ function renderInline(source: string, options: RenderMarkdownOptions): string {
     ].join('; ');
     const imageIndex = imageState.nextIndex;
     imageState.nextIndex += 1;
+    if (isVideoReference(path)) {
+      return [
+        `<span class="preview-video-frame" data-video-index="${imageIndex}" data-video-path="${escapeAttribute(path)}" tabindex="0">`,
+        `<video src="${escapeAttribute(resolvedHref)}" controls preload="metadata" aria-label="${escapeAttribute(unescapeHtml(alt) || 'Video')}"></video>`,
+        '</span>'
+      ].join('');
+    }
     return [
       `<span class="preview-image-frame" data-image-index="${imageIndex}" data-image-path="${escapeAttribute(path)}" data-image-width="${percent}" data-image-rotation="${rotation}" data-image-crop="${cropEnabled ? 'true' : 'false'}" data-image-crop-ratio="${activeCropRatio}" data-image-focus-x="${focusX}" data-image-focus-y="${focusY}" data-image-align="${escapeAttribute(align)}" data-image-display="${escapeAttribute(display)}" data-image-shadow="${shadow ? 'smooth' : 'none'}" style="${escapeAttribute(style)}" tabindex="0" data-tooltip="Click to select. Paste to replace, Delete to remove.">`,
       '<span class="preview-image-crop-box" data-tooltip="Click to select. Paste to replace, Delete to remove.">',
       `<img src="${escapeAttribute(resolvedHref)}" alt="${escapeAttribute(unescapeHtml(alt))}">`,
       '</span>',
       '<span class="preview-image-tools">',
-      `<button type="button" data-image-align-center aria-pressed="${align === 'center' ? 'true' : 'false'}" data-tooltip="${align === 'center' ? 'Stop centering image' : 'Center image'}">Center</button>`,
-      '<button type="button" data-image-side-text="right" data-tooltip="Add text to the right">Text right</button>',
-      '<button type="button" data-image-side-text="left" data-tooltip="Add text to the left">Text left</button>',
-      `<button type="button" data-image-crop-toggle aria-pressed="${cropEnabled ? 'true' : 'false'}" data-tooltip="${cropEnabled ? 'Turn off crop' : 'Crop image'}">Crop</button>`,
-      `<button type="button" data-image-display-inline aria-pressed="${display === 'inline' ? 'true' : 'false'}" data-tooltip="${display === 'inline' ? 'Show as block image' : 'Show inline'}">Inline</button>`,
-      `<button type="button" data-image-shadow-toggle aria-pressed="${shadow ? 'true' : 'false'}" data-tooltip="${shadow ? 'Remove image shadow' : 'Add image shadow'}">Shadow</button>`,
+      renderImageToolButton({
+        attributes: `data-image-align-center aria-pressed="${align === 'center' ? 'true' : 'false'}"`,
+        icon: 'align-center',
+        label: align === 'center' ? 'Stop centering image' : 'Center image',
+        tooltip: align === 'center' ? 'Stop centering image' : 'Center image'
+      }),
+      renderImageToolButton({
+        attributes: 'data-image-side-text="right"',
+        icon: 'text-right',
+        label: 'Add text to the right',
+        tooltip: 'Add text to the right'
+      }),
+      renderImageToolButton({
+        attributes: 'data-image-side-text="left"',
+        icon: 'text-left',
+        label: 'Add text to the left',
+        tooltip: 'Add text to the left'
+      }),
+      renderImageToolButton({
+        attributes: `data-image-crop-toggle aria-pressed="${cropEnabled ? 'true' : 'false'}"`,
+        icon: 'crop',
+        label: cropEnabled ? 'Turn off crop' : 'Crop image',
+        tooltip: cropEnabled ? 'Turn off crop' : 'Crop image'
+      }),
+      renderImageToolButton({
+        attributes: `data-image-display-inline aria-pressed="${display === 'inline' ? 'true' : 'false'}"`,
+        icon: 'inline',
+        label: display === 'inline' ? 'Show as block image' : 'Show inline',
+        tooltip: display === 'inline' ? 'Show as block image' : 'Show inline'
+      }),
+      renderImageToolButton({
+        attributes: `data-image-shadow-toggle aria-pressed="${shadow ? 'true' : 'false'}"`,
+        icon: 'shadow',
+        label: shadow ? 'Remove image shadow' : 'Add image shadow',
+        tooltip: shadow ? 'Remove image shadow' : 'Add image shadow'
+      }),
       '</span>',
       '<span class="preview-image-rotate" aria-hidden="true" data-tooltip="Drag to tilt image"><svg viewBox="0 0 28 24" focusable="false"><path d="M4.6 13.6C6.9 8.4 21.1 8.4 23.4 13.6M4.6 13.6l.3-4.45M4.6 13.6l4.55-.35M23.4 13.6l-.3-4.45M23.4 13.6l-4.55-.35"></path></svg></span>',
       '<span class="preview-image-crop-resize" aria-hidden="true" data-tooltip="Drag to change crop height"></span>',
@@ -300,6 +337,39 @@ function renderInline(source: string, options: RenderMarkdownOptions): string {
   html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
   html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
   return html;
+}
+
+function renderImageToolButton({
+  attributes,
+  icon,
+  label,
+  tooltip
+}: {
+  attributes: string;
+  icon: ImageToolIcon;
+  label: string;
+  tooltip: string;
+}): string {
+  return `<button type="button" ${attributes} data-tooltip="${escapeAttribute(tooltip)}" aria-label="${escapeAttribute(label)}">${renderImageToolIcon(icon)}</button>`;
+}
+
+type ImageToolIcon = 'align-center' | 'crop' | 'inline' | 'shadow' | 'text-left' | 'text-right';
+
+function renderImageToolIcon(icon: ImageToolIcon): string {
+  const paths: Record<ImageToolIcon, string> = {
+    'align-center': '<path d="M5 7h14M8 12h8M5 17h14"></path>',
+    crop: '<path d="M7 3v14a4 4 0 0 0 4 4h10M3 7h14a4 4 0 0 1 4 4v10M7 7h10v10H7z"></path>',
+    inline: '<path d="M4 6h7M15 6h5M4 12h3M17 12h3M4 18h7M15 18h5M9 9h6v6H9z"></path>',
+    shadow: '<path d="M7 5h10v10H7zM5 18h14M8 21h8"></path>',
+    'text-left': '<path d="M4 7h8M4 12h6M4 17h8M15 8h5v8h-5z"></path>',
+    'text-right': '<path d="M12 7h8M14 12h6M12 17h8M4 8h5v8H4z"></path>'
+  };
+
+  return `<svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">${paths[icon]}</svg>`;
+}
+
+function isVideoReference(path: string): boolean {
+  return /^data:video\//i.test(path) || /\.(?:mp4|webm|ogg|ogv|mov|m4v)(?:[?#].*)?$/i.test(path);
 }
 
 function createRenderedTextSourceMap(source: string): { sourceIndexes: number[]; text: string } {

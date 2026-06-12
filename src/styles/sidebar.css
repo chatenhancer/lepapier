@@ -274,4 +274,10 @@ body.is-resizing-sheet .sidebar {
 
 .smart-punctuation-field .inline-link-button {
   margin-left: 4px;
+  color: var(--muted);
+}
+
+.smart-punctuation-field .inline-link-button:hover,
+.smart-punctuation-field .inline-link-button:focus-visible {
+  color: var(--control);
 }

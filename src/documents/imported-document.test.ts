@@ -70,7 +70,7 @@ describe('createImportedDocument', () => {
     expect(imported.assets.map((asset) => asset.path)).toEqual(['assets/hero.png']);
   });
 
-  it('reuses shared image assets across a multi-document import batch', () => {
+  it('reuses shared media assets across a multi-document import batch', () => {
     const firstSource = 'First body with ![Hero](../assets/hero.png)';
     const secondSource = 'Second body with ![Hero](../assets/hero.png)';
     const firstMarkdown = new File([firstSource], 'first.md', { type: 'text/markdown' });
@@ -117,7 +117,36 @@ describe('createImportedDocument', () => {
 
     expect(firstImported.assets.map((asset) => asset.path)).toEqual(['assets/hero.png']);
     expect(secondImported.assets).toEqual([]);
-    expect(secondImported.images[0]).toBe(firstImported.images[0]);
+    expect(secondImported.media[0]).toBe(firstImported.media[0]);
     expect(secondImported.documentRecord.fields.body).toBe('Second body with ![Hero](assets/hero.png)');
+  });
+
+  it('imports video references without treating them as cover images', () => {
+    const source = [
+      '---',
+      'image: ./demo.mp4',
+      '---',
+      '',
+      'Watch ![Demo](./demo.mp4)'
+    ].join('\n');
+    const markdownFile = new File([source], 'index.md', { type: 'text/markdown' });
+    const video = new File(['video'], 'demo.mp4', { type: 'video/mp4' });
+
+    const imported = createImportedDocument({
+      createAssetId: () => 'asset-id',
+      createDocumentId: () => 'document-id',
+      existingAssetNames: [],
+      files: [markdownFile, video],
+      getFilePath: (file) => file.name,
+      markdownFile,
+      normalizeDocumentRecord: (documentRecord) => documentRecord as DocumentRecord,
+      paperWidth: 800,
+      previewActive: false,
+      source
+    });
+
+    expect(imported.coverImage).toBeNull();
+    expect(imported.documentRecord.fields.body).toBe('Watch ![Demo](demo.mp4)');
+    expect(imported.media.map((asset) => asset.path)).toEqual(['demo.mp4']);
   });
 });

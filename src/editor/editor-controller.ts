@@ -15,13 +15,13 @@ import {
   getEditableFolderPermissionState as getEditableFolderPermissionStateFromHandle
 } from '../filesystem/editable-folder';
 import {
-  getClipboardImages
-} from '../images/image-assets';
+  getClipboardMediaFiles
+} from '../media/media-assets';
 import {
   createAssetId,
-  createRestoredImageAsset,
+  createRestoredMediaAsset,
   assetMatchesPath
-} from '../images/image-library';
+} from '../media/media-library';
 import {
   getElement,
   isEditableTarget
@@ -31,7 +31,7 @@ import { getToday } from '../shared/date';
 import type {
   AssetMetadata,
   DocumentSourceMode,
-  ImageAsset,
+  MediaAsset,
   DocumentRecord,
   WorkspaceDraft
 } from '../shared/types';
@@ -41,7 +41,8 @@ import {
 import {
   createImportAssetRegistry,
   type ImportedAssetRegistry,
-  isImportImageFile
+  isImportImageFile,
+  isImportMediaFile
 } from '../documents/document-import';
 import {
   formatDocumentCount,
@@ -129,9 +130,9 @@ export function startEditorController(): void {
     downloadButtons,
     editorHeader,
     fieldElements,
-    imageList,
-    imagePicker,
-    imageTemplate,
+    mediaList,
+    mediaPicker,
+    mediaTemplate,
     insertButtons,
     mobileDocumentsToggle,
     mobileSettingsToggle,
@@ -149,7 +150,7 @@ export function startEditorController(): void {
     paperResizeHandles,
     preview,
     previewToggle,
-    randomizeImageNamesInput,
+    randomizeMediaNamesInput,
     resetButton,
     saveState,
     selectAllDocumentsInput,
@@ -203,9 +204,9 @@ export function startEditorController(): void {
   const draftPersistence = createEditorDraftPersistence({
     documents: session.documents,
     getActiveDocumentId: session.getActiveDocumentId,
-    getRandomizeImageNames: () => randomizeImageNamesInput.checked,
+    getRandomizeMediaNames: () => randomizeMediaNamesInput.checked,
     getSmartPunctuation: () => smartPunctuationInput.checked,
-    images: session.selectedImages,
+    media: session.selectedMedia,
     logError: logEditorError,
     renderDocumentsList,
     showSaveState,
@@ -230,7 +231,7 @@ export function startEditorController(): void {
     setWidth: editorLayout.setPaperWidth
   });
   const editableFolderFiles = createEditorEditableFolderFiles({
-    isImageFile: isImportImageFile,
+    isMediaFile: isImportMediaFile,
     logError: logEditorError
   });
   const chromeAiMetadata = setupChromeAiMetadataController({
@@ -280,8 +281,8 @@ export function startEditorController(): void {
     createAssetId,
     getCoverImage: session.getCoverImage,
     getFieldValue,
-    imageList,
-    imageTemplate,
+    mediaList,
+    mediaTemplate,
     isPreviewActive: session.isPreviewActive,
     exitPreviewMode,
     recordHistory: editorHistory.record,
@@ -289,7 +290,7 @@ export function startEditorController(): void {
     scheduleMetadata: () => {
       chromeAiMetadata.schedule();
     },
-    selectedImages: session.selectedImages,
+    selectedMedia: session.selectedMedia,
     setCoverImage: session.setCoverImage,
     setFieldValue,
     showSaveState,
@@ -303,20 +304,20 @@ export function startEditorController(): void {
     getCurrentAssetNames: mediaWorkflow.getCurrentAssetNames,
     getFileSourcePath: editableFolderFiles.getImportFilePath,
     getLiveAsset: session.getLiveAsset,
-    isImageFile: isImportImageFile,
+    isMediaFile: isImportMediaFile,
     logError: logEditorError,
     readEditableFolderFile: editableFolderFiles.readEditableFolderFile,
     renderCover: mediaWorkflow.renderCover,
-    renderImages: mediaWorkflow.renderImages,
+    renderMedia: mediaWorkflow.renderMedia,
     restoreSavedAsset,
     saveAsset: (asset) => editorStorage.saveAsset(asset),
-    selectedImages: session.selectedImages,
+    selectedMedia: session.selectedMedia,
     setCoverImage: session.setCoverImage
   });
   const downloadWorkflow = createEditorDownloadWorkflow({
     fallbackMs: downloadAnimationFallbackMs,
     getPrimaryDocumentsForExport,
-    isRandomizeImageNamesEnabled: () => randomizeImageNamesInput.checked,
+    isRandomizeMediaNamesEnabled: () => randomizeMediaNamesInput.checked,
     paper,
     resolveAssets: exportAssetWorkflow.getUniqueAssetFiles,
     saveDraft: saveDraftNow,
@@ -324,11 +325,11 @@ export function startEditorController(): void {
     writingColumn
   });
   const previewImageEditor = setupPreviewImageEditor({
-    addImageFile: mediaWorkflow.addImageFile,
+    addMediaFile: mediaWorkflow.addMediaFile,
     getMarkdown: () => getFieldValue('body'),
     preview,
     recordHistory: editorHistory.record,
-    renderImages: mediaWorkflow.renderImages,
+    renderMedia: mediaWorkflow.renderMedia,
     scheduleAiMetadata: () => {
       chromeAiMetadata.schedule();
     },
@@ -462,7 +463,7 @@ export function startEditorController(): void {
   setupEditorInteractions({
     addDocument: documentActions.addDocument,
     addDocumentButton,
-    addImageFile: mediaWorkflow.addImageFile,
+    addMediaFile: mediaWorkflow.addMediaFile,
     bodyInput,
     bugReportCopyButton,
     buildBugReportDetails() {
@@ -489,9 +490,9 @@ export function startEditorController(): void {
       void downloadWorkflow.downloadDocument();
     },
     downloadButtons,
-    imagePicker,
+    mediaPicker,
     insertButtons,
-    insertDroppedImages: mediaWorkflow.insertDroppedImages,
+    insertDroppedMedia: mediaWorkflow.insertDroppedMedia,
     insertFormatting: previewWorkflow.insertFormatting,
     isPreviewActive: session.isPreviewActive,
     normalizeSmartPunctuationFields: previewWorkflow.normalizeSmartPunctuationFields,
@@ -519,12 +520,12 @@ export function startEditorController(): void {
     paper,
     persistDraft,
     previewToggle,
-    randomizeImageNamesInput,
+    randomizeMediaNamesInput,
     recordHistory: editorHistory.record,
     reconnectEditableFolder(documentId) {
       void folderSync.reconnectEditableFolderForDocument(documentId);
     },
-    renderImages: mediaWorkflow.renderImages,
+    renderMedia: mediaWorkflow.renderMedia,
     resetWorkspace,
     resetButton,
     setCoverFile: mediaWorkflow.setCoverFile,
@@ -540,7 +541,7 @@ export function startEditorController(): void {
   });
 
   const loadedDraft = loadDraft();
-  mediaWorkflow.renderImages();
+  mediaWorkflow.renderMedia();
   mediaWorkflow.renderCover();
   previewWorkflow.renderPreviewMode({ focusWrite: false });
   sync({ persist: false });
@@ -627,12 +628,12 @@ export function startEditorController(): void {
     void editorStorage.clearEditableFolderHandles();
     const nextDocument = createDefaultDocument();
     session.resetWorkspace(nextDocument);
-    randomizeImageNamesInput.checked = false;
+    randomizeMediaNamesInput.checked = false;
     smartPunctuationInput.checked = true;
     applyDocumentToEditor(nextDocument, { focusWrite: false, restoreCover: false });
     previewWorkflow.renderPreviewMode({ focusWrite: false });
     renderDocumentsList();
-    mediaWorkflow.renderImages();
+    mediaWorkflow.renderMedia();
     mediaWorkflow.renderCover();
     sync();
   }
@@ -649,7 +650,7 @@ export function startEditorController(): void {
     const draft = normalizeWorkspaceDraft(saved, fallback, getNormalizeDocumentOptions());
 
     session.loadDraft(draft);
-    randomizeImageNamesInput.checked = Boolean(draft.randomizeImageNames);
+    randomizeMediaNamesInput.checked = Boolean(draft.randomizeMediaNames);
     smartPunctuationInput.checked = draft.smartPunctuation !== false;
     applyDocumentToEditor(getActiveDocument() || session.documents[0], { focusWrite: false, restoreCover: false });
     return draft;
@@ -680,10 +681,10 @@ export function startEditorController(): void {
   }
 
   async function restoreSavedAssets(draft: WorkspaceDraft): Promise<void> {
-    const images = await Promise.all((draft?.images || []).map((asset) => restoreSavedAsset(asset)));
+    const media = await Promise.all((draft?.media || []).map((asset) => restoreSavedAsset(asset)));
 
-    session.replaceSelectedImages(images.filter((image): image is ImageAsset => Boolean(image)));
-    mediaWorkflow.renderImages();
+    session.replaceSelectedMedia(media.filter((asset): asset is MediaAsset => Boolean(asset)));
+    mediaWorkflow.renderMedia();
     await restoreActiveDocumentCover();
     sync({ persist: false });
   }
@@ -734,13 +735,13 @@ export function startEditorController(): void {
     mediaWorkflow.renderCover();
   }
 
-  async function restoreSavedAsset(metadata: AssetMetadata | null | undefined): Promise<ImageAsset | null> {
+  async function restoreSavedAsset(metadata: AssetMetadata | null | undefined): Promise<MediaAsset | null> {
     if (!metadata?.id) return null;
 
     try {
       const record = await editorStorage.readAsset(metadata.id);
       if (!record?.file) return null;
-      return createRestoredImageAsset(metadata, record.file);
+      return createRestoredMediaAsset(metadata, record.file);
     } catch {
       return null;
     }
@@ -834,12 +835,12 @@ export function startEditorController(): void {
     const importedDocuments: ImportedDocument[] = [];
     const importAssetRegistry = createImportAssetRegistry({
       existingAssetNames: mediaWorkflow.getCurrentAssetNames(),
-      existingAssets: [session.getCoverImage(), ...session.selectedImages].filter((asset): asset is ImageAsset => Boolean(asset))
+      existingAssets: [session.getCoverImage(), ...session.selectedMedia].filter((asset): asset is MediaAsset => Boolean(asset))
     });
     for (const markdownFile of markdownFiles) {
       const importedDocument = await createImportedDocumentFromFiles(markdownFile, await markdownFile.text(), files, sourceMode, importAssetRegistry);
       importedDocuments.push(importedDocument);
-      addImportedImages(importedDocument.images);
+      addImportedMedia(importedDocument.media);
       await saveImportedAssets(importedDocument.assets);
       session.addDocument(importedDocument.documentRecord);
 
@@ -866,7 +867,7 @@ export function startEditorController(): void {
     session.setCoverImage(firstImportedDocument.coverImage);
     editorHistory.reset();
     applyDocumentToEditor(firstImportedDocument.documentRecord, { focusWrite: false, restoreCover: false });
-    mediaWorkflow.renderImages();
+    mediaWorkflow.renderMedia();
     mediaWorkflow.renderCover();
     sync();
   }
@@ -897,25 +898,25 @@ export function startEditorController(): void {
     });
   }
 
-  async function saveImportedAssets(assets: ImageAsset[]): Promise<void> {
+  async function saveImportedAssets(assets: MediaAsset[]): Promise<void> {
     await Promise.all(assets.map(async (asset) => {
       try {
         await editorStorage.saveAsset(asset);
       } catch {
-        showSaveState('Some imported images could not be saved for refresh');
+        showSaveState('Some imported media could not be saved for refresh');
       }
     }));
   }
 
-  function addImportedImages(images: ImageAsset[]): void {
-    for (const image of images) {
-      const alreadySelected = session.selectedImages.some((selectedImage) => {
-        return selectedImage.id === image.id
-          || assetMatchesPath(selectedImage, image.path)
-          || assetMatchesPath(selectedImage, image.sourcePath);
+  function addImportedMedia(media: MediaAsset[]): void {
+    for (const asset of media) {
+      const alreadySelected = session.selectedMedia.some((selectedAsset) => {
+        return selectedAsset.id === asset.id
+          || assetMatchesPath(selectedAsset, asset.path)
+          || assetMatchesPath(selectedAsset, asset.sourcePath);
       });
       if (!alreadySelected) {
-        session.selectedImages.push(image);
+        session.selectedMedia.push(asset);
       }
     }
   }
@@ -950,7 +951,7 @@ export function startEditorController(): void {
       coverImage: session.getCoverImage(),
       editState: session.getEditState(),
       fields,
-      images: session.selectedImages,
+      media: session.selectedMedia,
       paperWidth: editorLayout.getPaperWidth(),
       previewActive: session.isPreviewActive()
     });
@@ -961,7 +962,7 @@ export function startEditorController(): void {
     session.restoreSnapshotState(snapshot);
     editorLayout.setPaperWidth(snapshot.paperWidth);
     previewWorkflow.renderPreviewMode({ focusWrite: false });
-    mediaWorkflow.renderImages();
+    mediaWorkflow.renderMedia();
     mediaWorkflow.renderCover();
     sync();
   }
@@ -1005,7 +1006,7 @@ export function startEditorController(): void {
     const frame = previewImageEditor.getSelectedFrame();
     if (!frame) return;
 
-    const [file] = getClipboardImages(event.clipboardData);
+    const [file] = getClipboardMediaFiles(event.clipboardData);
     if (!file) return;
 
     event.preventDefault();

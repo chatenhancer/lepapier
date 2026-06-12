@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ImageAsset, DocumentRecord } from '../shared/types';
+import type { MediaAsset, DocumentRecord } from '../shared/types';
 import {
   createEditableFolderDocumentFiles,
   createEditableFileDocumentFile,
@@ -179,7 +179,7 @@ function createAsset({
   name: string;
   path: string;
   sourcePath?: string;
-}): ImageAsset {
+}): MediaAsset {
   return {
     file: new File([new Uint8Array([1, 2, 3])], name, { type: 'image/png' }),
     id: path,

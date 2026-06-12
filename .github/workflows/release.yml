@@ -18,8 +18,25 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Cache Playwright browsers
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+      - name: Install Playwright browser
+        run: npm run ci:install-playwright
       - name: Verify project
-        run: npm run verify
+        run: npm run ci:verify
+      - name: Upload Playwright failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: playwright-failure-artifacts
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
 
   package:
     needs: verify
@@ -35,11 +52,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Validate release tag
-        run: npm run release:validate-tag
-      - name: Build app
-        run: npm run build
-      - name: Create release zip
-        run: npm run release:zip
+        run: npm run ci:release-validate-tag
+      - name: Build release package
+        run: npm run ci:release-package
       - name: Upload release zip
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
@@ -61,11 +76,7 @@ jobs:
       - name: Generate release notes
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
-            -f tag_name="${GITHUB_REF_NAME}" \
-            --jq .body > release-notes.md
-          perl -0pi -e 's/Full Changelog/Full changelog/g' release-notes.md
+        run: npm run ci:release-notes
       - name: Create GitHub release
         uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3
         with:
@@ -88,9 +99,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Build Pages artifact
-        run: npm run pages:build:release
+        run: npm run ci:build-pages-release
       - name: Validate Pages editor
-        run: node scripts/validate-editor-version.mjs dist/docs/editor/index.html
+        run: npm run ci:validate-pages-editor
       - name: Configure GitHub Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
       - name: Upload GitHub Pages artifact

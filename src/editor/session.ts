@@ -3,14 +3,14 @@ import {
   normalizeDocumentRecord as normalizeWorkspaceDocumentRecord,
   type NormalizeDocumentOptions
 } from '../app/workspace-state';
-import { findLiveAsset } from '../images/image-library';
+import { findLiveAsset } from '../media/media-library';
 import type {
   AssetMetadata,
   DocumentEditState,
   DocumentRecord,
   EditableFileState,
   EditableFolderState,
-  ImageAsset,
+  MediaAsset,
   WorkspaceDraft
 } from '../shared/types';
 
@@ -27,30 +27,30 @@ export interface EditorSession {
   readonly editableFiles: Map<string, EditableFileState>;
   readonly editableFolders: Map<string, EditableFolderState>;
   readonly selectedDocumentIds: Set<string>;
-  readonly selectedImages: ImageAsset[];
+  readonly selectedMedia: MediaAsset[];
   addDocument(documentRecord: DocumentRecord): void;
   createDefaultDocument(overrides?: Partial<DocumentRecord>): DocumentRecord;
   getActiveDocument(): DocumentRecord | null;
   getActiveDocumentId(): string;
-  getCoverImage(): ImageAsset | null;
+  getCoverImage(): MediaAsset | null;
   getEditState(): DocumentEditState;
-  getLiveAsset(metadata: AssetMetadata | null | undefined): ImageAsset | null;
+  getLiveAsset(metadata: AssetMetadata | null | undefined): MediaAsset | null;
   isPreviewActive(): boolean;
   loadDraft(draft: WorkspaceDraft): void;
   markFieldEdited(fieldName: string): void;
   normalizeDocumentRecord(documentRecord: unknown): DocumentRecord | null;
   replaceDocuments(documentRecords: DocumentRecord[], activeDocumentId: string): void;
-  replaceSelectedImages(images: ImageAsset[]): void;
+  replaceSelectedMedia(media: MediaAsset[]): void;
   resetEditState(): void;
   resetWorkspace(documentRecord: DocumentRecord): void;
   restoreSnapshotState(snapshot: {
-    coverImage: ImageAsset | null;
+    coverImage: MediaAsset | null;
     editState: DocumentEditState;
-    images: ImageAsset[];
+    media: MediaAsset[];
     previewActive: boolean;
   }): void;
   setActiveDocumentId(documentId: string): void;
-  setCoverImage(asset: ImageAsset | null): void;
+  setCoverImage(asset: MediaAsset | null): void;
   setDocumentEditState(editState: Partial<DocumentEditState> | null | undefined): void;
   setPreviewActive(value: boolean): void;
   togglePreviewActive(): boolean;
@@ -67,9 +67,9 @@ export function createEditorSession({
   const editableFiles = new Map<string, EditableFileState>();
   const editableFolders = new Map<string, EditableFolderState>();
   const selectedDocumentIds = new Set<string>();
-  const selectedImages: ImageAsset[] = [];
+  const selectedMedia: MediaAsset[] = [];
   let activeDocumentId = '';
-  let coverImage: ImageAsset | null = null;
+  let coverImage: MediaAsset | null = null;
   let editState: DocumentEditState = createEmptyEditState();
   let previewActive = false;
 
@@ -94,7 +94,7 @@ export function createEditorSession({
   };
 
   const getLiveAsset = (metadata: AssetMetadata | null | undefined) => {
-    return findLiveAsset(metadata, [coverImage, ...selectedImages]);
+    return findLiveAsset(metadata, [coverImage, ...selectedMedia]);
   };
 
   const resetEditState = () => {
@@ -106,7 +106,7 @@ export function createEditorSession({
     editableFiles,
     editableFolders,
     selectedDocumentIds,
-    selectedImages,
+    selectedMedia,
     addDocument(documentRecord) {
       documents.push(documentRecord);
       activeDocumentId = documentRecord.id;
@@ -158,8 +158,8 @@ export function createEditorSession({
         }
       }
     },
-    replaceSelectedImages(images) {
-      selectedImages.splice(0, selectedImages.length, ...images);
+    replaceSelectedMedia(media) {
+      selectedMedia.splice(0, selectedMedia.length, ...media);
     },
     resetEditState,
     resetWorkspace(documentRecord) {
@@ -168,14 +168,14 @@ export function createEditorSession({
       selectedDocumentIds.clear();
       documents.splice(0, documents.length, documentRecord);
       activeDocumentId = documentRecord.id;
-      selectedImages.splice(0, selectedImages.length);
+      selectedMedia.splice(0, selectedMedia.length);
       coverImage = null;
       resetEditState();
       previewActive = false;
     },
     restoreSnapshotState(snapshot) {
       coverImage = snapshot.coverImage || null;
-      selectedImages.splice(0, selectedImages.length, ...(snapshot.images || []));
+      selectedMedia.splice(0, selectedMedia.length, ...(snapshot.media || []));
       setDocumentEditState(snapshot.editState);
       previewActive = Boolean(snapshot.previewActive);
     },

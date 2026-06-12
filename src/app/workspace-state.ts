@@ -11,14 +11,14 @@ import { stripMarkdown } from '../shared/text';
 export const currentWorkspaceDraftVersion = 3;
 
 export interface WorkspacePreferences {
-  randomizeImageNames: boolean;
+  randomizeMediaNames: boolean;
   smartPunctuation: boolean;
 }
 
 export interface WorkspaceState {
   activeDocumentId: string;
   documents: DocumentRecord[];
-  images: AssetMetadata[];
+  media: AssetMetadata[];
   preferences: WorkspacePreferences;
   version: number;
 }
@@ -111,8 +111,8 @@ export function normalizeWorkspaceDraft(
       return {
         activeDocumentId: activeId,
         documents: normalizedDocuments,
-        images: normalizeAssetMetadataList(migrated.images),
-        randomizeImageNames: Boolean(migrated.randomizeImageNames),
+        media: normalizeAssetMetadataList(migrated.media),
+        randomizeMediaNames: Boolean(migrated.randomizeMediaNames),
         smartPunctuation: migrated.smartPunctuation !== false,
         version: currentWorkspaceDraftVersion
       };
@@ -122,8 +122,8 @@ export function normalizeWorkspaceDraft(
   return {
     activeDocumentId: fallbackDocument.id,
     documents: [fallbackDocument],
-    images: [],
-    randomizeImageNames: false,
+    media: [],
+    randomizeMediaNames: false,
     smartPunctuation: true,
     version: currentWorkspaceDraftVersion
   };
@@ -172,8 +172,8 @@ export function toWorkspaceDraft(state: WorkspaceState): WorkspaceDraft {
   return {
     activeDocumentId: state.activeDocumentId,
     documents: state.documents,
-    images: state.images,
-    randomizeImageNames: state.preferences.randomizeImageNames,
+    media: state.media,
+    randomizeMediaNames: state.preferences.randomizeMediaNames,
     smartPunctuation: state.preferences.smartPunctuation,
     version: currentWorkspaceDraftVersion
   };
@@ -184,26 +184,6 @@ function migrateWorkspaceDraft(saved: unknown): Partial<WorkspaceDraft> | null {
 
   if (Array.isArray(saved.documents)) {
     return saved as Partial<WorkspaceDraft>;
-  }
-
-  if (isRecord(saved.fields)) {
-    return {
-      activeDocumentId: typeof saved.activeDocumentId === 'string' ? saved.activeDocumentId : 'legacy-document',
-      documents: [{
-        coverImage: normalizeAssetMetadata(saved.coverImage),
-        editState: isRecord(saved.editState) ? saved.editState : {},
-        fields: saved.fields,
-        frontmatterExtras: Array.isArray(saved.frontmatterExtras) ? saved.frontmatterExtras : [],
-        id: typeof saved.activeDocumentId === 'string' ? saved.activeDocumentId : 'legacy-document',
-        paperWidth: saved.paperWidth,
-        updatedAt: saved.updatedAt,
-        viewMode: saved.viewMode
-      } as unknown as DocumentRecord],
-      images: normalizeAssetMetadataList(saved.images),
-      randomizeImageNames: Boolean(saved.randomizeImageNames),
-      smartPunctuation: saved.smartPunctuation !== false,
-      version: currentWorkspaceDraftVersion
-    };
   }
 
   return null;

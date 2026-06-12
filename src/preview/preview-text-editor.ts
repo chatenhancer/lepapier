@@ -273,7 +273,7 @@ export function setupPreviewTextEditor({
 
     for (const element of preview.querySelectorAll<HTMLElement>('.preview-body [data-source-start][data-source-end]')) {
       if (element.closest('[data-media-copy]')) continue;
-      if (element.querySelector('.preview-image-frame')) continue;
+      if (element.querySelector('.preview-image-frame, .preview-video-frame')) continue;
 
       makePreviewTextEditable(element);
       if (element.dataset.tableRow !== undefined && element.dataset.tableColumn !== undefined) {

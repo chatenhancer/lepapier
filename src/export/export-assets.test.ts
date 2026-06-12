@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type {
-  ImageAsset,
+  MediaAsset,
   DocumentRecord
 } from '../shared/types';
 import {
@@ -76,7 +76,7 @@ function createDocument(fields: Partial<DocumentRecord['fields']> = {}): Documen
   };
 }
 
-function createAsset(path: string): ImageAsset {
+function createAsset(path: string): MediaAsset {
   return {
     file: new File(['image'], path, { type: 'image/png' }),
     id: path,

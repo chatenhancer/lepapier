@@ -1,7 +1,7 @@
-import { serializeAssetMetadata } from '../../images/image-library';
+import { serializeAssetMetadata } from '../../media/media-library';
 import type {
   AssetMetadata,
-  ImageAsset,
+  MediaAsset,
   DocumentRecord,
   WorkspaceDraft
 } from '../../shared/types';
@@ -14,9 +14,9 @@ export interface EditorDraftPersistence {
 export interface EditorDraftPersistenceOptions {
   documents: DocumentRecord[];
   getActiveDocumentId(): string;
-  getRandomizeImageNames(): boolean;
+  getRandomizeMediaNames(): boolean;
   getSmartPunctuation(): boolean;
-  images: ImageAsset[];
+  media: MediaAsset[];
   logError(message: string, error: unknown, details?: Record<string, unknown>): void;
   renderDocumentsList(): void;
   showSaveState(text: string, options?: { feedback?: boolean }): void;
@@ -28,9 +28,9 @@ export interface EditorDraftPersistenceOptions {
 export function createEditorDraftPersistence({
   documents,
   getActiveDocumentId,
-  getRandomizeImageNames,
+  getRandomizeMediaNames,
   getSmartPunctuation,
-  images,
+  media,
   logError,
   renderDocumentsList,
   showSaveState,
@@ -47,8 +47,8 @@ export function createEditorDraftPersistence({
     const draft: WorkspaceDraft = {
       activeDocumentId: getActiveDocumentId(),
       documents,
-      images: images.map((asset) => serializeAssetMetadata(asset)).filter((asset): asset is AssetMetadata => Boolean(asset)),
-      randomizeImageNames: getRandomizeImageNames(),
+      media: media.map((asset) => serializeAssetMetadata(asset)).filter((asset): asset is AssetMetadata => Boolean(asset)),
+      randomizeMediaNames: getRandomizeMediaNames(),
       smartPunctuation: getSmartPunctuation(),
       version: 3
     };

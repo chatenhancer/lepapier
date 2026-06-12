@@ -15,5 +15,13 @@
     "isolatedModules": true,
     "noEmit": true
   },
-  "include": ["src", "vite.config.ts"]
+  "include": [
+    "src",
+    "tests/e2e",
+    "tests/e2e-production",
+    "playwright.config.ts",
+    "playwright.production.config.ts",
+    "vite.config.ts",
+    "vitest.config.ts"
+  ]
 }

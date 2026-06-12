@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ImageAsset } from '../shared/types';
+import type { MediaAsset } from '../shared/types';
 import {
   assetMatchesPath,
-  createRestoredImageAsset,
+  createRestoredMediaAsset,
   findLiveAsset,
   serializeAssetMetadata
-} from './image-library';
+} from './media-library';
 
-describe('image library helpers', () => {
-  it('serializes image assets for draft storage', () => {
+describe('media library helpers', () => {
+  it('serializes media assets for draft storage', () => {
     expect(serializeAssetMetadata(createAsset({ id: 'asset-1', path: 'hero.png' }))).toEqual({
       id: 'asset-1',
       name: 'hero.png',
@@ -35,10 +35,10 @@ describe('image library helpers', () => {
     expect(findLiveAsset({ path: 'missing.png' }, [asset])).toBeNull();
   });
 
-  it('restores image assets from saved files and metadata', () => {
+  it('restores media assets from saved files and metadata', () => {
     const file = new File(['image'], 'original.png', { type: 'image/png' });
 
-    expect(createRestoredImageAsset({
+    expect(createRestoredMediaAsset({
       id: 'asset-1',
       path: 'hero.png'
     }, file, () => 'blob:hero')).toMatchObject({
@@ -59,7 +59,7 @@ function createAsset({
   id?: string;
   path: string;
   sourcePath?: string;
-}): ImageAsset {
+}): MediaAsset {
   return {
     file: new File(['image'], path, { type: 'image/png' }),
     id,

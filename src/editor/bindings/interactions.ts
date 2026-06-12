@@ -1,14 +1,15 @@
 import { getElement } from '../../dom/elements';
 import {
-  getClipboardImages,
-  setupImageDropZone
-} from '../../images/image-assets';
+  getClipboardMediaFiles,
+  isSupportedMediaFile,
+  setupMediaDropZone
+} from '../../media/media-assets';
 import { createCopyButtonFeedback } from '../../ui/feedback';
 
 export interface EditorInteractionOptions {
   addDocument(): void;
   addDocumentButton: HTMLButtonElement;
-  addImageFile(file: File): unknown;
+  addMediaFile(file: File): unknown;
   bodyInput: HTMLTextAreaElement;
   bugReportCopyButton: HTMLButtonElement;
   buildBugReportDetails(): string;
@@ -23,9 +24,9 @@ export interface EditorInteractionOptions {
   documentList: HTMLElement;
   downloadDocument(): void;
   downloadButtons: HTMLButtonElement[];
-  imagePicker: HTMLInputElement;
+  mediaPicker: HTMLInputElement;
   insertButtons: HTMLButtonElement[];
-  insertDroppedImages(files: File[]): void;
+  insertDroppedMedia(files: File[]): void;
   insertFormatting(type: string): void;
   isPreviewActive(): boolean;
   normalizeSmartPunctuationFields(options: { force?: boolean; record?: boolean }): boolean;
@@ -45,10 +46,10 @@ export interface EditorInteractionOptions {
   paper: HTMLElement;
   persistDraft(): void;
   previewToggle: HTMLButtonElement;
-  randomizeImageNamesInput: HTMLInputElement;
+  randomizeMediaNamesInput: HTMLInputElement;
   recordHistory(): void;
   reconnectEditableFolder(documentId: string): void;
-  renderImages(): void;
+  renderMedia(): void;
   resetWorkspace(): void;
   resetButton: HTMLButtonElement;
   setCoverFile(file: File): void;
@@ -66,7 +67,7 @@ export interface EditorInteractionOptions {
 export function setupEditorInteractions({
   addDocument,
   addDocumentButton,
-  addImageFile,
+  addMediaFile,
   bodyInput,
   bugReportCopyButton,
   buildBugReportDetails,
@@ -81,9 +82,9 @@ export function setupEditorInteractions({
   documentList,
   downloadDocument,
   downloadButtons,
-  imagePicker,
+  mediaPicker,
   insertButtons,
-  insertDroppedImages,
+  insertDroppedMedia,
   insertFormatting,
   isPreviewActive,
   normalizeSmartPunctuationFields,
@@ -103,10 +104,10 @@ export function setupEditorInteractions({
   paper,
   persistDraft,
   previewToggle,
-  randomizeImageNamesInput,
+  randomizeMediaNamesInput,
   recordHistory,
   reconnectEditableFolder,
-  renderImages,
+  renderMedia,
   resetWorkspace,
   resetButton,
   setCoverFile,
@@ -240,7 +241,7 @@ export function setupEditorInteractions({
   });
 
   previewToggle.addEventListener('click', togglePreviewMode);
-  randomizeImageNamesInput.addEventListener('change', persistDraft);
+  randomizeMediaNamesInput.addEventListener('change', persistDraft);
   smartPunctuationInput.addEventListener('change', () => {
     if (smartPunctuationInput.checked) {
       normalizeSmartPunctuationFields({ record: true });
@@ -282,53 +283,54 @@ export function setupEditorInteractions({
     sync();
   });
 
-  imagePicker.addEventListener('change', () => {
-    const files = Array.from(imagePicker.files || []);
-    if (files.some((file) => file.type.startsWith('image/'))) {
+  mediaPicker.addEventListener('change', () => {
+    const files = Array.from(mediaPicker.files || []);
+    if (files.some(isSupportedMediaFile)) {
       recordHistory();
     }
     for (const file of files) {
-      addImageFile(file);
+      addMediaFile(file);
     }
-    imagePicker.value = '';
-    renderImages();
+    mediaPicker.value = '';
+    renderMedia();
     sync();
   });
 
-  setupImageDropZone(coverPicker.closest('.file-drop'), {
+  setupMediaDropZone(coverPicker.closest('.file-drop'), {
     multiple: false,
     onFiles(files: File[]) {
+      if (!files[0]?.type.startsWith('image/')) return;
       recordHistory();
       setCoverFile(files[0]);
       sync();
     }
   });
 
-  setupImageDropZone(imagePicker.closest('.file-drop'), {
+  setupMediaDropZone(mediaPicker.closest('.file-drop'), {
     multiple: true,
     onFiles(files: File[]) {
       recordHistory();
       for (const file of files) {
-        addImageFile(file);
+        addMediaFile(file);
       }
-      renderImages();
+      renderMedia();
       sync();
     }
   });
 
-  setupImageDropZone(paper, {
+  setupMediaDropZone(paper, {
     multiple: true,
     onFiles(files: File[]) {
-      insertDroppedImages(files);
+      insertDroppedMedia(files);
     }
   });
 
   bodyInput.addEventListener('paste', (event: ClipboardEvent) => {
-    const files = getClipboardImages(event.clipboardData);
+    const files = getClipboardMediaFiles(event.clipboardData);
     if (!files.length) return;
 
     event.preventDefault();
-    insertDroppedImages(files);
+    insertDroppedMedia(files);
   });
 }
 

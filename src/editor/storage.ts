@@ -1,7 +1,7 @@
 import { createIndexedDbStore } from '../storage/indexeddb-store';
 import { createLocalDraftStore } from '../storage/local-draft-store';
 import type {
-  ImageAsset,
+  MediaAsset,
   WorkspaceDraft
 } from '../shared/types';
 
@@ -14,7 +14,7 @@ export interface EditorStorage {
   readDraft(): WorkspaceDraft | null;
   readEditableFileHandle(documentId: string): Promise<{ fileHandle?: FileSystemFileHandle } | null>;
   readEditableFolderHandle(documentId: string): Promise<{ directoryHandle?: FileSystemDirectoryHandle } | null>;
-  saveAsset(asset: ImageAsset): Promise<void>;
+  saveAsset(asset: MediaAsset): Promise<void>;
   saveEditableFileHandle(documentId: string, fileHandle: FileSystemFileHandle): Promise<void>;
   saveEditableFolderHandle(documentId: string, directoryHandle: FileSystemDirectoryHandle): Promise<void>;
   writeDraft(draft: WorkspaceDraft): void;

@@ -22,7 +22,7 @@ import {
 } from '../../markdown/toolbar-formatting';
 import { renderDocumentPreview as renderDocumentPreviewHtml } from '../../preview/document-preview';
 import { getPreviewSelectionSourceRange } from '../../preview/preview-selection';
-import type { ImageAsset } from '../../shared/types';
+import type { MediaAsset } from '../../shared/types';
 
 export interface EditorPreviewWorkflow {
   insertFormatting(type: string): void;
@@ -39,7 +39,7 @@ export interface EditorPreviewWorkflowOptions {
   bodyInput: HTMLTextAreaElement;
   editorLayout: EditorLayoutController;
   fields: Map<EditorFieldName, EditorFieldElement>;
-  getCoverImage(): ImageAsset | null;
+  getCoverImage(): MediaAsset | null;
   getFieldValue(name: EditorFieldName): string;
   isPreviewActive(): boolean;
   isSmartPunctuationEnabled(): boolean;

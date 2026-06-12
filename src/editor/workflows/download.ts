@@ -5,7 +5,7 @@ import {
 import { createZip } from '../../export/zip';
 import { getPathBasename } from '../../documents/document-markdown';
 import type {
-  ImageAsset,
+  MediaAsset,
   DocumentRecord
 } from '../../shared/types';
 import { playDownloadAnimation } from '../../ui/download-animation';
@@ -17,9 +17,9 @@ export interface EditorDownloadWorkflow {
 export interface EditorDownloadWorkflowOptions {
   fallbackMs: number;
   getPrimaryDocumentsForExport(): DocumentRecord[];
-  isRandomizeImageNamesEnabled(): boolean;
+  isRandomizeMediaNamesEnabled(): boolean;
   paper: HTMLElement;
-  resolveAssets(documentRecords: DocumentRecord[]): Promise<ImageAsset[]>;
+  resolveAssets(documentRecords: DocumentRecord[]): Promise<MediaAsset[]>;
   saveDraft(): void;
   showSaveState(text: string): void;
   writingColumn: HTMLElement;
@@ -28,7 +28,7 @@ export interface EditorDownloadWorkflowOptions {
 export function createEditorDownloadWorkflow({
   fallbackMs,
   getPrimaryDocumentsForExport,
-  isRandomizeImageNamesEnabled,
+  isRandomizeMediaNamesEnabled,
   paper,
   resolveAssets,
   saveDraft,
@@ -46,7 +46,7 @@ export function createEditorDownloadWorkflow({
       await download();
     } catch (error) {
       console.error(error);
-      showSaveState('Could not bundle every image');
+      showSaveState('Could not bundle every media asset');
     }
   };
 
@@ -56,7 +56,7 @@ export function createEditorDownloadWorkflow({
         const documentRecords = getPrimaryDocumentsForExport();
         const files = await createPortableDocumentFiles({
           documentRecords,
-          randomizeImageNames: isRandomizeImageNamesEnabled(),
+          randomizeMediaNames: isRandomizeMediaNamesEnabled(),
           resolveAssets
         });
         await downloadFiles(files, documentRecords.length === 1 ? `${getFileStem(getPathBasename(files[0]?.path || 'document'))}.zip` : 'lepapier-documents.zip');
