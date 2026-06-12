@@ -4,6 +4,7 @@ import {
   formatPreviewMarkdownBlock,
   insertPreviewTableColumn,
   insertPreviewTableRow,
+  updatePreviewTableCell,
   updatePreviewMarkdownBlock,
   updateMarkdownMediaBlockText
 } from './preview-text-editor';
@@ -48,6 +49,22 @@ describe('preview text editor helpers', () => {
     ].join('\n'));
   });
 
+  it('saves edited table cells by replacing the parsed table block', () => {
+    const markdown = ['Intro', '', '| Name | Count |', '| --- | ---: |', '| Paper | 3 |', '', 'Outro'].join('\n');
+    const tableStart = markdown.indexOf('| Name');
+    const tableEnd = markdown.indexOf('\n\nOutro');
+
+    expect(updatePreviewTableCell(markdown, tableStart, tableEnd, 1, 0, 'TD', 'Card | stock')).toBe([
+      'Intro',
+      '',
+      '| Name | Count |',
+      '| --- | ---: |',
+      '| Card \\| stock | 3 |',
+      '',
+      'Outro'
+    ].join('\n'));
+  });
+
   it('adds a preview table row after the active row', () => {
     const markdown = [
       'Intro',
@@ -82,6 +99,32 @@ describe('preview text editor helpers', () => {
       '| Name | Column | Count |',
       '| --- | --- | ---: |',
       '| Paper |  | 3 |'
+    ].join('\n'));
+  });
+
+  it('adds a row after committing a pending table cell edit', () => {
+    const markdown = ['| Name | Count |', '| --- | ---: |', '| Paper | 3 |', '| Pen | 8 |'].join('\n');
+    const edited = updatePreviewTableCell(markdown, 0, markdown.length, 1, 0, 'TD', 'Notebook');
+    const adjustedEnd = markdown.length + (edited.length - markdown.length);
+
+    expect(insertPreviewTableRow(edited, 0, adjustedEnd, 1)).toBe([
+      '| Name | Count |',
+      '| --- | ---: |',
+      '| Notebook | 3 |',
+      '|  |  |',
+      '| Pen | 8 |'
+    ].join('\n'));
+  });
+
+  it('adds a column after committing a pending table cell edit', () => {
+    const markdown = ['| Name | Count |', '| --- | ---: |', '| Paper | 3 |'].join('\n');
+    const edited = updatePreviewTableCell(markdown, 0, markdown.length, 1, 1, 'TD', '12');
+    const adjustedEnd = markdown.length + (edited.length - markdown.length);
+
+    expect(insertPreviewTableColumn(edited, 0, adjustedEnd, 1)).toBe([
+      '| Name | Count | Column |',
+      '| --- | ---: | --- |',
+      '| Paper | 12 |  |'
     ].join('\n'));
   });
 

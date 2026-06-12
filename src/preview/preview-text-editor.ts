@@ -29,6 +29,11 @@ export interface PreviewTextEditorOptions {
   sync(): void;
 }
 
+type TableCoordinates = {
+  columnIndex: number | null;
+  rowIndex: number | null;
+};
+
 export function setupPreviewTextEditor({
   getBody,
   getFieldValue,
@@ -129,9 +134,15 @@ export function setupPreviewTextEditor({
     }
 
     const nextText = normalizePreviewEditedText(element.innerText);
-    const updatedBody = updatePreviewMarkdownBlock(body, sourceStart, sourceEnd, element.tagName, nextText, {
-      listMarker: element.dataset.listMarker
-    });
+    const table = element.closest<HTMLElement>('.preview-table-scroll[data-table-start][data-table-end]');
+    const tableCoordinates = getTableCellCoordinates(element);
+    const tableStart = Number(table?.dataset.tableStart);
+    const tableEnd = Number(table?.dataset.tableEnd);
+    const updatedBody = table && tableCoordinates && Number.isInteger(tableStart) && Number.isInteger(tableEnd)
+      ? updatePreviewTableCell(body, tableStart, tableEnd, tableCoordinates.rowIndex, tableCoordinates.columnIndex, element.tagName, nextText)
+      : updatePreviewMarkdownBlock(body, sourceStart, sourceEnd, element.tagName, nextText, {
+          listMarker: element.dataset.listMarker
+        });
     if (updatedBody !== body) {
       setFieldValue('body', updatedBody);
       if (syncAfter) {
@@ -161,9 +172,24 @@ export function setupPreviewTextEditor({
     table.dataset.activeColumn = element.dataset.tableColumn || '';
   };
 
-  const getActiveTableCell = (table: HTMLElement) => (
-    activeTableCell?.closest('.preview-table-scroll') === table ? activeTableCell : null
-  );
+  const getActiveTableCell = (table: HTMLElement) => {
+    return activeTableCell?.closest('.preview-table-scroll') === table ? activeTableCell : null;
+  };
+
+  const getActiveTableCoordinates = (table: HTMLElement) => {
+    const activeCell = getActiveTableCell(table);
+    const activeCellCoordinates = activeCell ? getTableCellCoordinates(activeCell) : null;
+    if (activeCellCoordinates) return activeCellCoordinates;
+
+    const rowIndex = parseTableActionIndex(table.dataset.activeRow);
+    const columnIndex = parseTableActionIndex(table.dataset.activeColumn);
+    if (rowIndex === null && columnIndex === null) return null;
+
+    return {
+      columnIndex,
+      rowIndex
+    };
+  };
 
   const updatePreviewTable = (table: HTMLElement, action: 'column' | 'row') => {
     let tableStart = Number(table.dataset.tableStart);
@@ -173,6 +199,7 @@ export function setupPreviewTextEditor({
     recordHistory();
 
     const cell = getActiveTableCell(table);
+    const coordinates = getActiveTableCoordinates(table);
     let body = getBody();
     if (cell?.dataset.editing === 'true') {
       const commit = commitPreviewMarkdownText(cell, { syncAfter: false });
@@ -180,11 +207,9 @@ export function setupPreviewTextEditor({
       tableEnd += commit.diff;
     }
 
-    const rowIndex = parseTableActionIndex(cell?.dataset.tableRow);
-    const columnIndex = parseTableActionIndex(cell?.dataset.tableColumn);
     const updatedBody = action === 'row'
-      ? insertPreviewTableRow(body, tableStart, tableEnd, rowIndex)
-      : insertPreviewTableColumn(body, tableStart, tableEnd, columnIndex);
+      ? insertPreviewTableRow(body, tableStart, tableEnd, coordinates?.rowIndex ?? null)
+      : insertPreviewTableColumn(body, tableStart, tableEnd, coordinates?.columnIndex ?? null);
 
     if (updatedBody === body) return;
 
@@ -208,16 +233,12 @@ export function setupPreviewTextEditor({
       rowButton.type = 'button';
       rowButton.className = 'preview-table-control';
       rowButton.textContent = 'Add row';
-      rowButton.addEventListener('click', () => {
-        updatePreviewTable(table, 'row');
-      });
+      wireTableActionButton(rowButton, () => updatePreviewTable(table, 'row'));
 
       columnButton.type = 'button';
       columnButton.className = 'preview-table-control';
       columnButton.textContent = 'Add column';
-      columnButton.addEventListener('click', () => {
-        updatePreviewTable(table, 'column');
-      });
+      wireTableActionButton(columnButton, () => updatePreviewTable(table, 'column'));
 
       controls.append(rowButton, columnButton);
       table.prepend(controls);
@@ -325,6 +346,36 @@ export function updatePreviewMarkdownBlock(
   return replaceSourceRange(markdown, sourceStart, sourceEnd, () => replacement);
 }
 
+export function updatePreviewTableCell(
+  markdown: string,
+  tableStart: number,
+  tableEnd: number,
+  rowIndex: number | null,
+  columnIndex: number | null,
+  tagName: string,
+  text: string
+): string {
+  if (rowIndex === null || columnIndex === null) return markdown;
+
+  const table = parsePreviewTable(markdown, tableStart, tableEnd);
+  const markdownRowIndex = renderedTableRowIndexToMarkdownRowIndex(rowIndex);
+  if (
+    !table
+    || markdownRowIndex < 0
+    || columnIndex < 0
+    || markdownRowIndex >= table.rows.length
+    || columnIndex >= table.columnCount
+  ) {
+    return markdown;
+  }
+
+  const rows = table.rows.map((row) => normalizePreviewTableCells(row, table.columnCount));
+  rows[markdownRowIndex] = [...rows[markdownRowIndex]];
+  rows[markdownRowIndex][columnIndex] = formatPreviewMarkdownBlock(tagName, text);
+
+  return replaceSourceRange(markdown, tableStart, tableEnd, () => formatPreviewTableRows(rows));
+}
+
 export function insertPreviewTableRow(
   markdown: string,
   tableStart: number,
@@ -406,6 +457,45 @@ export function updateMarkdownMediaBlockText(markdown: string, mediaIndex: numbe
 function parseTableActionIndex(value: string | undefined): number | null {
   const parsed = Number(value);
   return Number.isInteger(parsed) ? parsed : null;
+}
+
+function renderedTableRowIndexToMarkdownRowIndex(rowIndex: number): number {
+  return rowIndex <= 0 ? 0 : rowIndex + 1;
+}
+
+function getTableCellCoordinates(element: HTMLElement): TableCoordinates | null {
+  const rowIndex = parseTableActionIndex(element.dataset.tableRow);
+  const columnIndex = parseTableActionIndex(element.dataset.tableColumn);
+  if (rowIndex === null || columnIndex === null) return null;
+
+  return {
+    columnIndex,
+    rowIndex
+  };
+}
+
+function wireTableActionButton(button: HTMLButtonElement, action: () => void): void {
+  let handledPointer = false;
+
+  button.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+    handledPointer = true;
+    action();
+  });
+
+  button.addEventListener('pointercancel', () => {
+    handledPointer = false;
+  });
+
+  button.addEventListener('click', (event) => {
+    event.preventDefault();
+    if (handledPointer) {
+      handledPointer = false;
+      return;
+    }
+
+    action();
+  });
 }
 
 function parsePreviewTable(markdown: string, tableStart: number, tableEnd: number): { columnCount: number; rows: string[][] } | null {
