@@ -67,8 +67,16 @@ export function setupEditorLayoutController({
   const resizeBodyInput = () => {
     if (isPreviewActive() || bodyInput.hidden) return;
 
+    const shouldPreserveScroll = bodyInput.ownerDocument.activeElement === bodyInput;
+    const scrollX = shouldPreserveScroll ? windowTarget.scrollX : 0;
+    const scrollY = shouldPreserveScroll ? windowTarget.scrollY : 0;
+
     bodyInput.style.height = 'auto';
     bodyInput.style.height = `${bodyInput.scrollHeight}px`;
+
+    if (shouldPreserveScroll && (windowTarget.scrollX !== scrollX || windowTarget.scrollY !== scrollY)) {
+      windowTarget.scrollTo(scrollX, scrollY);
+    }
   };
 
   const setPaperWidth = (value: unknown) => {

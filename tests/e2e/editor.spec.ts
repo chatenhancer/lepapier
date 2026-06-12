@@ -58,3 +58,59 @@ test('undoes and redoes editor toolbar changes', async ({ page }) => {
   await page.keyboard.press('ControlOrMeta+Shift+Z');
   await expect(bodyInput(page)).toHaveValue(/Undo base\*\*bold text\*\*/);
 });
+
+test('keeps write-mode scroll position while typing in a long document', async ({ page }) => {
+  await page.setViewportSize({ height: 720, width: 1280 });
+
+  const lines = Array.from({ length: 180 }, (_value, index) => `Line ${index + 1}`);
+  const body = lines.join('\n');
+  const targetLine = 100;
+  const targetText = `Line ${targetLine}`;
+  const targetOffset = body.indexOf(targetText) + targetText.length;
+
+  await bodyInput(page).fill(body);
+  await bodyInput(page).evaluate((element, offset) => {
+    if (!(element instanceof HTMLTextAreaElement)) return;
+
+    element.focus({ preventScroll: true });
+    element.setSelectionRange(offset, offset);
+  }, targetOffset);
+
+  const scrollBeforeTyping = await page.evaluate((lineNumber) => {
+    const input = document.querySelector<HTMLTextAreaElement>('[data-field="body"]');
+    if (!input) return window.scrollY;
+
+    const style = window.getComputedStyle(input);
+    const lineHeight = Number.parseFloat(style.lineHeight) || 28;
+    const inputTop = input.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo(0, Math.round(inputTop + ((lineNumber - 1) * lineHeight) - 220));
+    return window.scrollY;
+  }, targetLine);
+
+  await page.keyboard.type(' typed');
+
+  await expect.poll(() => page.evaluate((expectedScrollY) => {
+    return Math.abs(window.scrollY - expectedScrollY);
+  }, scrollBeforeTyping)).toBeLessThanOrEqual(1);
+  await expect(bodyInput(page)).toHaveValue(body.replace(targetText, `${targetText} typed`));
+});
+
+test('scrolls the write-mode cursor into view for toolbar insertions', async ({ page }) => {
+  await page.setViewportSize({ height: 720, width: 1280 });
+
+  const body = Array.from({ length: 180 }, (_value, index) => `Line ${index + 1}`).join('\n');
+  await bodyInput(page).fill(body);
+  await bodyInput(page).evaluate((element) => {
+    if (!(element instanceof HTMLTextAreaElement)) return;
+
+    element.focus({ preventScroll: true });
+    element.setSelectionRange(element.value.length, element.value.length);
+  });
+  await page.evaluate(() => window.scrollTo(0, 0));
+
+  const scrollBeforeToolbar = await page.evaluate(() => window.scrollY);
+  await page.locator('[data-insert="bold"]').click();
+
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(scrollBeforeToolbar + 200);
+  await expect(bodyInput(page)).toHaveValue(/Line 180\*\*bold text\*\*/);
+});
