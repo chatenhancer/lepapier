@@ -10,7 +10,7 @@ const docsItems = [
   {
     iconPath: 'M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h240l80 80h320q33 0 56.5 23.5T880-640H447l-80-80H160v480l96-320h684L837-217q-8 26-29.5 41.5T760-160H160Zm84-80h516l72-240H316l-72 240Zm0 0 72-240-72 240Zm-84-400v-80 80Z',
     title: 'Files',
-    body: 'Open Markdown files or folders, import referenced image assets, and use editable file handles in browsers that support the File System Access API.'
+    body: 'Open Markdown files or folders, import referenced media assets, and use editable file handles in browsers that support the File System Access API.'
   },
   {
     iconPath: 'M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Zm0-300Zm0 220q113 0 207.5-59.5T832-500q-50-101-144.5-160.5T480-720q-113 0-207.5 59.5T128-500q50 101 144.5 160.5T480-280Z',
@@ -19,13 +19,13 @@ const docsItems = [
   },
   {
     iconPath: 'M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm40-80h480L570-480 450-320l-90-120-120 160Zm-40 80v-560 560Z',
-    title: 'Images',
-    body: 'Add cover images and document images, then resize, align, crop, shadow, replace, or remove images from the preview.'
+    title: 'Media',
+    body: 'Add cover images plus document images and videos. Images can be resized, aligned, cropped, shadowed, replaced, or removed from the preview.'
   },
   {
     iconPath: 'M360-200v-80h480v80H360Zm0-240v-80h480v80H360Zm0-240v-80h480v80H360ZM200-160q-33 0-56.5-23.5T120-240q0-33 23.5-56.5T200-320q33 0 56.5 23.5T280-240q0 33-23.5 56.5T200-160Zm0-240q-33 0-56.5-23.5T120-480q0-33 23.5-56.5T200-560q33 0 56.5 23.5T280-480q0 33-23.5 56.5T200-400Zm0-240q-33 0-56.5-23.5T120-720q0-33 23.5-56.5T200-800q33 0 56.5 23.5T280-720q0 33-23.5 56.5T200-640Z',
     title: 'Markdown',
-    body: 'Use headings, emphasis, links, code, quotes, unordered lists, ordered lists, task lists, horizontal rules, strikethrough, tables, and image attributes.'
+    body: 'Use headings, emphasis, links, code, quotes, unordered lists, ordered lists, task lists, horizontal rules, strikethrough, tables, image attributes, and playable video references.'
   },
   {
     iconPath: 'm480-240 160-160-56-56-64 64v-168h-80v168l-64-64-56 56 160 160ZM200-640v440h560v-440H200Zm0 520q-33 0-56.5-23.5T120-200v-499q0-14 4.5-27t13.5-24l50-61q11-14 27.5-21.5T250-840h460q18 0 34.5 7.5T772-811l50 61q9 11 13.5 24t4.5 27v499q0 33-23.5 56.5T760-120H200Zm16-600h528l-34-40H250l-34 40Zm264 300Z',
@@ -45,7 +45,7 @@ const workflowItems = [
   },
   {
     title: 'Refine from preview',
-    body: 'Switch to preview to edit body text, title, description, tags, tables, and image presentation directly on the rendered document.'
+    body: 'Switch to preview to edit body text, title, description, tags, tables, and media presentation directly on the rendered document.'
   },
   {
     title: 'Export for publishing',
@@ -57,19 +57,19 @@ const markdownItems = [
   'Headings, paragraphs, blockquotes, inline code, fenced code, links, bold, italic, and strikethrough.',
   'Unordered lists, ordered lists, task lists, and horizontal rules.',
   'Tables with editable cells plus preview controls for adding rows and columns.',
-  'Markdown images with width, alignment, crop, rotation, display, shadow, and side-text helpers.'
+  'Markdown images with width, alignment, crop, rotation, display, shadow, and side-text helpers, plus video references rendered as playable media.'
 ];
 
-const imageItems = [
-  'The cover image is separate from document images and maps to the frontmatter image field.',
-  'The Images sidebar is a workspace asset shelf for images available to insert, download, and export.',
-  'Preview resolves image paths against the current cover image and the workspace image shelf.',
-  'Imports dedupe shared referenced files so the same image can be reused across multiple imported documents.'
+const mediaItems = [
+  'The cover image is separate from document media and maps to the frontmatter image field.',
+  'The Media sidebar is a workspace asset shelf for images and videos available to insert, download, and export.',
+  'Preview resolves media paths against the current cover image and the workspace media shelf.',
+  'Imports dedupe shared referenced files so the same media file can be reused across multiple imported documents.'
 ];
 
 const storageItems = [
   'Document drafts and preferences are saved in browser storage.',
-  'Image files and granted editable file or folder handles are restored through IndexedDB where available.',
+  'Media files and granted editable file or folder handles are restored through IndexedDB where available.',
   'Chrome built-in AI metadata suggestions run locally after Chrome installs the model.',
   'A detected app update asks you to reload instead of forcing a refresh while you are writing.'
 ];
@@ -83,7 +83,7 @@ const limitations = [
 
 <BaseLayout
   title="Lepapier - Local-first Markdown editor"
-  description="Lepapier is a local-first Markdown editor for quiet writing, preview editing, images, frontmatter, and portable exports."
+  description="Lepapier is a local-first Markdown editor for quiet writing, preview editing, media, frontmatter, and portable exports."
 >
   <main>
     <section class="hero" aria-labelledby="hero-title">
@@ -96,7 +96,7 @@ const limitations = [
           <p>Get back to work.</p>
         </div>
 
-        <a class="hero-cta" href="/editor/" aria-label="Start writing with Lepapier">Start writing</a>
+        <a class="hero-cta" href="/editor/" aria-label="Start writing with Lepapier"><span>Start writing</span></a>
 
         <p class="hero-docs-link">
           If you do want to distract yourself, here&rsquo;s the <a href="#documentation">documentation</a>
@@ -110,7 +110,7 @@ const limitations = [
           <p class="docs-kicker">An overview of Lepapier</p>
           <h2 id="documentation-title">What Lepapier does now.</h2>
           <p>
-            Lepapier is a local-first Markdown editor for quiet writing and practical static-site publishing. It keeps the main surface simple, then puts files, metadata, images, preview editing, and export tools around the document.
+            Lepapier is a local-first Markdown editor for quiet writing and practical static-site publishing. It keeps the main surface simple, then puts files, metadata, media, preview editing, and export tools around the document.
           </p>
         </div>
 
@@ -149,10 +149,10 @@ const limitations = [
             </ul>
           </section>
 
-          <section class="docs-panel" aria-labelledby="images-title">
-            <h3 id="images-title">Images and assets</h3>
+          <section class="docs-panel" aria-labelledby="media-title">
+            <h3 id="media-title">Media and assets</h3>
             <ul>
-              {imageItems.map((item) => <li>{item}</li>)}
+              {mediaItems.map((item) => <li>{item}</li>)}
             </ul>
           </section>
 

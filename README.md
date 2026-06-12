@@ -16,7 +16,7 @@
 
 Lepapier (from French: le papier, "the paper") is a local-first Markdown writing app for drafting, editing, previewing, and exporting documents from the browser.
 
-It is designed to serve as a quiet writing surface with the least distractions possible, while still handling the practical parts of publishing: frontmatter, images, Markdown previews, preview editing, drafts, importing and exporting, syncing with local files, and portability.
+It is designed to serve as a quiet writing surface with the least distractions possible, while still handling the practical parts of publishing: frontmatter, media, Markdown previews, preview editing, drafts, importing and exporting, syncing with local files, and portability.
 
 It builds into a single `index.html` file that can be placed and opened anywhere.
 
@@ -36,13 +36,13 @@ Feature set and robustness will improve in the future as I go along.
 - Multi-document workspace with document selection, bulk download, and bulk removal.
 - Open a Markdown file or a folder of Markdown files.
 - Open and sync a Markdown file or folder using the File System Access API where supported.
-- Import referenced image assets from opened folders.
-- Add cover images and document images, then export them with Markdown.
+- Import referenced media assets from opened folders.
+- Add cover images plus document images and videos, then export them with Markdown.
 - Download one document as `.md` when no assets are needed, or export documents and assets as a `.zip`.
-- Live Markdown preview with editable text, table cells, and image controls.
+- Live Markdown preview with editable text, table cells, image controls, and playable videos.
 - Frontmatter fields for title, date, slug, description, tags, and cover image.
 - Optional manual Chrome built-in AI metadata refresh buttons for title, description, and tags.
-- Smart punctuation and image filename randomization options.
+- Smart punctuation and media filename randomization options.
 - PWA-ready standalone app built with Vite and vanilla DOM APIs.
 
 ## Editing workflow
@@ -57,6 +57,7 @@ Preview mode currently supports editing:
 - Body text, headings, quotes, list items, title, description, and tags.
 - Table cells, with controls for adding rows and columns.
 - Images, including resize, alignment, crop, rotation, inline display, shadow, replacement, side text, and removal.
+- Videos as playable media in preview and exported bundles.
 
 ## Markdown support
 
@@ -66,20 +67,21 @@ The renderer supports the Markdown used by the editor workflows:
 - Unordered lists, ordered lists, task lists, and horizontal rules.
 - Tables with alignment markers and editable preview cells.
 - Markdown images with app-specific attributes for width, alignment, crop, focus, rotation, display, shadow, and media side text.
+- Video references rendered as playable media.
 
-## Images and assets
+## Media and assets
 
-Cover images and document images are handled separately:
+Cover images and document media are handled separately:
 
 - The cover image maps to the frontmatter image field.
-- The Images sidebar is a workspace asset shelf. It shows images available to insert, download, and export.
-- Markdown image paths are resolved against the cover image and the workspace image shelf.
-- Imported folders reuse shared referenced image files instead of creating a separate copy for every Markdown document.
+- The Media sidebar is a workspace asset shelf. It shows images and videos available to insert, download, and export.
+- Markdown media paths are resolved against the cover image and the workspace media shelf.
+- Imported folders reuse shared referenced media files instead of creating a separate copy for every Markdown document.
 
 ## Privacy
 
 - Drafts and settings stay in browser storage.
-- Image files and editable file/folder handles are stored locally in IndexedDB where available.
+- Media files and editable file/folder handles are stored locally in IndexedDB where available.
 - Files opened through the File System Access API stay local to your browser session and granted handles.
 - Metadata suggestions use Chrome's built-in AI when available. After Chrome installs the model, metadata suggestions run locally.
 - App updates are surfaced as a reload prompt instead of forcing a refresh while you are writing.
@@ -159,9 +161,9 @@ The release workflow validates exact `vX.Y.Z` tags against `package.json`, creat
 
 - `Vite` serves and bundles the standalone app.
 
-- The editor is a vanilla DOM app with direct access to browser-native APIs: IndexedDB, File System Access, clipboard images, PWA support, and Chrome built-in AI.
+- The editor is a vanilla DOM app with direct access to browser-native APIs: IndexedDB, File System Access, clipboard media, PWA support, and Chrome built-in AI.
 
-- Draft text is saved in `localStorage`; selected image files and editable file/folder handles are saved in IndexedDB.
+- Draft text is saved in `localStorage`; selected media files and editable file/folder handles are saved in IndexedDB.
 
 - Exports are generated client-side as Markdown files or zip archives depending on selected documents and referenced assets.
 
