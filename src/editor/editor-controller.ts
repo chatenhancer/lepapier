@@ -19,7 +19,8 @@ import {
 } from '../images/image-assets';
 import {
   createAssetId,
-  createRestoredImageAsset
+  createRestoredImageAsset,
+  assetMatchesPath
 } from '../images/image-library';
 import {
   getElement,
@@ -38,6 +39,8 @@ import {
   buildDocumentMarkdown
 } from '../documents/document-markdown';
 import {
+  createImportAssetRegistry,
+  type ImportedAssetRegistry,
   isImportImageFile
 } from '../documents/document-import';
 import {
@@ -827,10 +830,14 @@ export function startEditorController(): void {
     }
   ): Promise<void> {
     const importedDocuments: ImportedDocument[] = [];
+    const importAssetRegistry = createImportAssetRegistry({
+      existingAssetNames: mediaWorkflow.getCurrentAssetNames(),
+      existingAssets: [session.getCoverImage(), ...session.selectedImages].filter((asset): asset is ImageAsset => Boolean(asset))
+    });
     for (const markdownFile of markdownFiles) {
-      const importedDocument = await createImportedDocumentFromFiles(markdownFile, await markdownFile.text(), files, sourceMode);
+      const importedDocument = await createImportedDocumentFromFiles(markdownFile, await markdownFile.text(), files, sourceMode, importAssetRegistry);
       importedDocuments.push(importedDocument);
-      session.selectedImages.push(...importedDocument.images);
+      addImportedImages(importedDocument.images);
       await saveImportedAssets(importedDocument.assets);
       session.addDocument(importedDocument.documentRecord);
 
@@ -866,9 +873,11 @@ export function startEditorController(): void {
     markdownFile: File,
     source: string,
     files: File[],
-    sourceMode: DocumentSourceMode
+    sourceMode: DocumentSourceMode,
+    assetRegistry: ImportedAssetRegistry
   ): Promise<ImportedDocument> {
     return createImportedDocument({
+      assetRegistry,
       createAssetId,
       createDocumentId,
       existingAssetNames: mediaWorkflow.getCurrentAssetNames(),
@@ -894,6 +903,19 @@ export function startEditorController(): void {
         showSaveState('Some imported images could not be saved for refresh');
       }
     }));
+  }
+
+  function addImportedImages(images: ImageAsset[]): void {
+    for (const image of images) {
+      const alreadySelected = session.selectedImages.some((selectedImage) => {
+        return selectedImage.id === image.id
+          || assetMatchesPath(selectedImage, image.path)
+          || assetMatchesPath(selectedImage, image.sourcePath);
+      });
+      if (!alreadySelected) {
+        session.selectedImages.push(image);
+      }
+    }
   }
 
   function handleEditorHistoryShortcut(event: KeyboardEvent): void {

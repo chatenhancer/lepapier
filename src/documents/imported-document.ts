@@ -5,6 +5,7 @@ import {
 } from '../markdown/frontmatter';
 import {
   createDocumentImportPlan,
+  type ImportedAssetRegistry,
   normalizeImportedAssetReference,
   rewriteImportedMarkdownAssetPaths
 } from './document-import';
@@ -25,6 +26,7 @@ export interface ImportedDocument {
 }
 
 export interface CreateImportedDocumentOptions {
+  assetRegistry?: ImportedAssetRegistry;
   createAssetId(): string;
   createDocumentId(): string;
   existingAssetNames: string[];
@@ -39,6 +41,7 @@ export interface CreateImportedDocumentOptions {
 }
 
 export function createImportedDocument({
+  assetRegistry,
   createAssetId,
   createDocumentId,
   existingAssetNames,
@@ -53,6 +56,7 @@ export function createImportedDocument({
 }: CreateImportedDocumentOptions): ImportedDocument {
   const { body, frontmatter, frontmatterExtras } = parseImportedMarkdown(source);
   const importPlan = createDocumentImportPlan({
+    assetRegistry,
     body,
     createAssetId,
     existingAssetNames,

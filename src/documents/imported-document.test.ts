@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { DocumentRecord } from '../shared/types';
 import { createImportedDocument } from './imported-document';
+import { createImportAssetRegistry } from './document-import';
 
 describe('createImportedDocument', () => {
   it('creates a normalized document from markdown frontmatter', () => {
@@ -67,5 +68,56 @@ describe('createImportedDocument', () => {
 
     expect(imported.documentRecord.fields.body).toBe('Body with ![Hero](assets/hero.png)');
     expect(imported.assets.map((asset) => asset.path)).toEqual(['assets/hero.png']);
+  });
+
+  it('reuses shared image assets across a multi-document import batch', () => {
+    const firstSource = 'First body with ![Hero](../assets/hero.png)';
+    const secondSource = 'Second body with ![Hero](../assets/hero.png)';
+    const firstMarkdown = new File([firstSource], 'first.md', { type: 'text/markdown' });
+    const secondMarkdown = new File([secondSource], 'second.md', { type: 'text/markdown' });
+    const hero = new File(['image'], 'hero.png', { type: 'image/png' });
+    const assetRegistry = createImportAssetRegistry();
+    let assetNumber = 0;
+
+    const firstImported = createImportedDocument({
+      assetRegistry,
+      createAssetId: () => `asset-${++assetNumber}`,
+      createDocumentId: () => 'first-document',
+      existingAssetNames: [],
+      files: [firstMarkdown, secondMarkdown, hero],
+      getFilePath(file) {
+        if (file === firstMarkdown) return 'posts/first.md';
+        if (file === secondMarkdown) return 'posts/second.md';
+        return 'assets/hero.png';
+      },
+      markdownFile: firstMarkdown,
+      normalizeDocumentRecord: (documentRecord) => documentRecord as DocumentRecord,
+      paperWidth: 800,
+      previewActive: false,
+      source: firstSource
+    });
+
+    const secondImported = createImportedDocument({
+      assetRegistry,
+      createAssetId: () => `asset-${++assetNumber}`,
+      createDocumentId: () => 'second-document',
+      existingAssetNames: [],
+      files: [firstMarkdown, secondMarkdown, hero],
+      getFilePath(file) {
+        if (file === firstMarkdown) return 'posts/first.md';
+        if (file === secondMarkdown) return 'posts/second.md';
+        return 'assets/hero.png';
+      },
+      markdownFile: secondMarkdown,
+      normalizeDocumentRecord: (documentRecord) => documentRecord as DocumentRecord,
+      paperWidth: 800,
+      previewActive: false,
+      source: secondSource
+    });
+
+    expect(firstImported.assets.map((asset) => asset.path)).toEqual(['assets/hero.png']);
+    expect(secondImported.assets).toEqual([]);
+    expect(secondImported.images[0]).toBe(firstImported.images[0]);
+    expect(secondImported.documentRecord.fields.body).toBe('Second body with ![Hero](assets/hero.png)');
   });
 });

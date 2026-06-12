@@ -9,6 +9,7 @@ import {
 } from './document-markdown';
 
 export interface CreateDocumentImportPlanOptions {
+  assetRegistry?: ImportedAssetRegistry;
   body: string;
   createAssetId: () => string;
   existingAssetNames: string[];
@@ -18,6 +19,17 @@ export interface CreateDocumentImportPlanOptions {
   markdownFile: File;
 }
 
+export interface ImportedAssetRegistry {
+  fileAssets: Map<File, ImageAsset>;
+  pathAssets: Map<string, ImageAsset>;
+  usedNames: Set<string>;
+}
+
+export interface CreateImportAssetRegistryOptions {
+  existingAssetNames?: string[];
+  existingAssets?: ImageAsset[];
+}
+
 export interface DocumentImportPlan {
   assetPathMap: AssetPathMap;
   assets: ImageAsset[];
@@ -25,7 +37,26 @@ export interface DocumentImportPlan {
   images: ImageAsset[];
 }
 
+export function createImportAssetRegistry({
+  existingAssetNames = [],
+  existingAssets = []
+}: CreateImportAssetRegistryOptions = {}): ImportedAssetRegistry {
+  const registry: ImportedAssetRegistry = {
+    fileAssets: new Map(),
+    pathAssets: new Map(),
+    usedNames: new Set(existingAssetNames.filter(Boolean))
+  };
+
+  for (const asset of existingAssets) {
+    if (asset.name) registry.usedNames.add(asset.name);
+    registerImportedAssetPath(asset, registry);
+  }
+
+  return registry;
+}
+
 export function createDocumentImportPlan({
+  assetRegistry,
   body,
   createAssetId,
   existingAssetNames,
@@ -37,15 +68,21 @@ export function createDocumentImportPlan({
   const imageFiles = files.filter(isImportImageFile);
   const fileIndex = createImportFileIndex(imageFiles, getFilePath);
   const assetPathMap: AssetPathMap = new Map();
-  const fileAssetMap = new Map<File, ImageAsset>();
-  const usedNames = new Set(existingAssetNames.filter(Boolean));
+  const registry = assetRegistry || createImportAssetRegistry({ existingAssetNames });
+  for (const name of existingAssetNames) {
+    if (name) registry.usedNames.add(name);
+  }
+  const createdAssets = new Set<ImageAsset>();
+  const bodyImages = new Set<ImageAsset>();
 
   let importedCoverImage: ImageAsset | null = null;
   const imageReference = String(frontmatter.image || '').trim();
   if (imageReference) {
     const imageFile = resolveImportFileForReference(imageReference, fileIndex, markdownFile, getFilePath);
     if (imageFile) {
-      importedCoverImage = getOrCreateImportedAsset(imageFile, imageReference, fileAssetMap, usedNames, createAssetId, getFilePath);
+      const { asset, created } = getOrCreateImportedAsset(imageFile, imageReference, registry, createAssetId, getFilePath);
+      if (created) createdAssets.add(asset);
+      importedCoverImage = asset;
       addImportedAssetPathAlias(assetPathMap, imageReference, importedCoverImage.path);
     }
   }
@@ -54,16 +91,17 @@ export function createDocumentImportPlan({
     const imageFile = resolveImportFileForReference(imageReference, fileIndex, markdownFile, getFilePath);
     if (!imageFile) continue;
 
-    const asset = getOrCreateImportedAsset(imageFile, imageReference, fileAssetMap, usedNames, createAssetId, getFilePath);
+    const { asset, created } = getOrCreateImportedAsset(imageFile, imageReference, registry, createAssetId, getFilePath);
+    if (created) createdAssets.add(asset);
+    if (asset !== importedCoverImage) bodyImages.add(asset);
     addImportedAssetPathAlias(assetPathMap, imageReference, asset.path);
   }
 
-  const assets = Array.from(fileAssetMap.values());
   return {
     assetPathMap,
-    assets,
+    assets: Array.from(createdAssets),
     coverImage: importedCoverImage,
-    images: assets.filter((asset) => asset !== importedCoverImage)
+    images: Array.from(bodyImages)
   };
 }
 
@@ -171,17 +209,20 @@ function getImportReferencePath(reference: string, markdownFile: File, getFilePa
 function getOrCreateImportedAsset(
   file: File,
   reference: string,
-  fileAssetMap: Map<File, ImageAsset>,
-  usedNames: Set<string>,
+  registry: ImportedAssetRegistry,
   createAssetId: () => string,
   getFilePath: (file: File) => string
-): ImageAsset {
-  if (fileAssetMap.has(file)) return fileAssetMap.get(file) as ImageAsset;
-
+): { asset: ImageAsset; created: boolean } {
   const referenceFileName = normalizeImportedAssetReference(reference).split('/').pop() || file.name;
   const sourcePath = normalizeImportPath(getFilePath(file) || file.name);
-  const name = dedupeFileName(sanitizeFileName(referenceFileName), Array.from(usedNames));
-  usedNames.add(name);
+  const existingAsset = registry.fileAssets.get(file) || registry.pathAssets.get(sourcePath);
+  if (existingAsset) {
+    registry.fileAssets.set(file, existingAsset);
+    return { asset: existingAsset, created: false };
+  }
+
+  const name = dedupeFileName(sanitizeFileName(referenceFileName), Array.from(registry.usedNames));
+  registry.usedNames.add(name);
 
   const asset = {
     file,
@@ -191,8 +232,18 @@ function getOrCreateImportedAsset(
     sourcePath,
     url: URL.createObjectURL(file)
   };
-  fileAssetMap.set(file, asset);
-  return asset;
+  registry.fileAssets.set(file, asset);
+  registerImportedAssetPath(asset, registry);
+  return { asset, created: true };
+}
+
+function registerImportedAssetPath(asset: ImageAsset, registry: ImportedAssetRegistry): void {
+  for (const path of [asset.path, asset.sourcePath]) {
+    const key = normalizeImportPath(path || '');
+    if (key && !registry.pathAssets.has(key)) {
+      registry.pathAssets.set(key, asset);
+    }
+  }
 }
 
 function addImportedAssetPathAlias(assetPathMap: AssetPathMap, reference: string, assetPath: string): void {
