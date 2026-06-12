@@ -80,8 +80,8 @@ export function renderDocumentList({
     deleteButton.type = 'button';
     deleteButton.className = 'document-delete';
     deleteButton.dataset.deleteDocument = documentRecord.id;
-    deleteButton.setAttribute('aria-label', `Delete ${titleText}`);
-    deleteButton.title = 'Delete document';
+    deleteButton.dataset.tooltip = 'Remove document';
+    deleteButton.setAttribute('aria-label', `Remove ${titleText}`);
     deleteButton.innerHTML = [
       '<svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">',
       '<path d="M7 21a2 2 0 0 1-2-2V7H4V5h5V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1h5v2h-1v12a2 2 0 0 1-2 2H7Zm10-14H7v12h10V7ZM11 9v8H9V9h2Zm4 0v8h-2V9h2ZM11 5h2V4h-2v1Z"></path>',
@@ -133,8 +133,8 @@ function createReconnectFolderButton(documentId: string): HTMLButtonElement {
   reconnectButton.type = 'button';
   reconnectButton.className = 'document-sync-reconnect';
   reconnectButton.dataset.reconnectFolder = documentId;
+  reconnectButton.dataset.tooltip = 'Reconnect the editable folder.';
   reconnectButton.textContent = 'Reconnect';
-  reconnectButton.title = 'Reconnect the editable folder.';
   return reconnectButton;
 }
 

@@ -8,6 +8,7 @@ import {
 import { getMarkdownImageOccurrences } from '../markdown/markdown-editing';
 import type { ImageAsset } from '../shared/types';
 import {
+  removeMarkdownImage,
   setMarkdownImageAlignment,
   setMarkdownImageCrop,
   setMarkdownImageCropFocus,
@@ -137,18 +138,42 @@ export function setupPreviewImageEditor({
     scheduleAiMetadata();
   };
 
+  const removeImage = (frame: HTMLElement) => {
+    const path = frame.dataset.imagePath;
+    const imageIndex = Number(frame.dataset.imageIndex);
+    if (!path || !Number.isInteger(imageIndex)) return;
+
+    const body = getMarkdown();
+    const markdown = removeMarkdownImage(body, path, imageIndex);
+    if (markdown === body) return;
+
+    commitMarkdown(markdown);
+    scheduleAiMetadata();
+  };
+
   const attachSelection = () => {
     for (const frame of preview.querySelectorAll<HTMLElement>('.preview-image-frame')) {
-      frame.addEventListener('click', () => {
+      frame.addEventListener('click', (event: MouseEvent) => {
         selectFrame(frame);
+        if (!isImageControlTarget(event.target)) {
+          frame.focus({ preventScroll: true });
+        }
       });
       frame.addEventListener('focus', () => {
         selectFrame(frame);
       });
       frame.addEventListener('keydown', (event: KeyboardEvent) => {
-        if (event.key !== 'Escape') return;
-        clearSelection();
-        frame.blur();
+        if (event.target !== frame) return;
+        if (event.key === 'Escape') {
+          clearSelection();
+          frame.blur();
+          return;
+        }
+        if (event.key !== 'Delete' && event.key !== 'Backspace') return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        removeImage(frame);
       });
     }
   };
@@ -322,7 +347,7 @@ export function setupPreviewImageEditor({
       }
 
       button.addEventListener('click', () => {
-        updateImageAlignment(path, 'center');
+        updateImageAlignment(path, frame.dataset.imageAlign === 'center' ? 'left' : 'center');
       });
     }
 
@@ -403,4 +428,13 @@ function setPreviewImageCropFocus(frame: HTMLElement, focusX: unknown, focusY: u
   frame.dataset.imageFocusY = String(y);
   frame.style.setProperty('--preview-image-focus-x', `${x}%`);
   frame.style.setProperty('--preview-image-focus-y', `${y}%`);
+}
+
+function isImageControlTarget(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && Boolean(target.closest([
+    '.preview-image-tools',
+    '.preview-image-resize',
+    '.preview-image-crop-resize',
+    '.preview-image-rotate'
+  ].join(',')));
 }

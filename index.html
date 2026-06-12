@@ -19,8 +19,8 @@
   <body>
     <header class="editor-header">
       <a class="brand" href="https://lepapier.app" aria-label="Lepapier home" data-app-home>
-        <img class="brand-logo brand-logo-light" src="/assets/icons/lepapier.svg" width="64" height="64" alt="" data-app-logo="light">
-        <img class="brand-logo brand-logo-dark" src="/assets/icons/lepapier-dark.svg" width="64" height="64" alt="" data-app-logo="dark">
+        <img class="brand-logo brand-logo-light" src="/assets/icons/lepapier.svg" width="44" height="44" alt="" data-app-logo="light">
+        <img class="brand-logo brand-logo-dark" src="/assets/icons/lepapier-dark.svg" width="44" height="44" alt="" data-app-logo="dark">
       </a>
       <div class="header-actions">
         <span class="save-state" data-save-state>Saved in browser</span>
@@ -39,7 +39,7 @@
             <h2>Documents <span class="document-count" data-document-count aria-label="1 document open" hidden>1</span></h2>
           </div>
           <div class="documents-heading-actions">
-            <button class="icon-button" type="button" data-add-document aria-label="New document" title="New document">
+            <button class="icon-button" type="button" data-add-document aria-label="New document" data-tooltip="New document">
               <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
                 <path d="M12 4a1 1 0 0 1 1 1v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6V5a1 1 0 0 1 1-1Z"></path>
               </svg>
@@ -81,7 +81,7 @@
           </div>
         </div>
         <button class="secondary-button full-button" type="button" data-download>Download</button>
-        <button class="text-button full-button document-bulk-delete" type="button" data-delete-selected hidden>Delete selected</button>
+        <button class="text-button full-button document-bulk-delete" type="button" data-delete-selected hidden>Remove selected</button>
       </aside>
 
       <section class="writing-column" aria-labelledby="editor-title">
@@ -90,13 +90,18 @@
             <button type="button" data-insert="heading">Heading</button>
             <button type="button" data-insert="bold">Bold</button>
             <button type="button" data-insert="italic">Italic</button>
+            <button type="button" data-insert="strike">Strike</button>
             <button type="button" data-insert="quote">Quote</button>
             <button type="button" data-insert="list">List</button>
+            <button type="button" data-insert="ordered-list">Ordered</button>
+            <button type="button" data-insert="task-list">Task</button>
             <button type="button" data-insert="link">Link</button>
             <button type="button" data-insert="image">Image</button>
+            <button type="button" data-insert="rule">Rule</button>
+            <button type="button" data-insert="table">Table</button>
             <button type="button" data-insert="code">Code</button>
           </div>
-          <button class="preview-toggle" type="button" data-preview-toggle aria-pressed="false" title="Preview">
+          <button class="preview-toggle" type="button" data-preview-toggle aria-pressed="false" data-tooltip="Preview">
             <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
               <path d="M12 5.5c4.18 0 7.45 2.55 9.25 6.5-1.8 3.95-5.07 6.5-9.25 6.5S4.55 15.95 2.75 12C4.55 8.05 7.82 5.5 12 5.5Zm0 2C8.92 7.5 6.43 9.12 4.98 12c1.45 2.88 3.94 4.5 7.02 4.5s5.57-1.62 7.02-4.5C17.57 9.12 15.08 7.5 12 7.5Zm0 1.5a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z"></path>
             </svg>
@@ -137,8 +142,8 @@
             placeholder="Start writing..."
           ></textarea>
           <article class="preview" data-preview hidden></article>
-          <button class="paper-width-resize paper-width-resize-left" type="button" data-paper-resize="left" aria-label="Resize writing sheet from left edge" title="Resize writing sheet"></button>
-          <button class="paper-width-resize paper-width-resize-right" type="button" data-paper-resize="right" aria-label="Resize writing sheet from right edge" title="Resize writing sheet"></button>
+          <button class="paper-width-resize paper-width-resize-left" type="button" data-paper-resize="left" aria-label="Resize writing sheet from left edge" data-tooltip="Resize writing sheet"></button>
+          <button class="paper-width-resize paper-width-resize-right" type="button" data-paper-resize="right" aria-label="Resize writing sheet from right edge" data-tooltip="Resize writing sheet"></button>
         </article>
       </section>
 
@@ -186,13 +191,16 @@
               </div>
               <input id="tags" type="text" data-field="tags" placeholder="notes, launch">
             </div>
-            <label class="checkbox-field">
-              <input type="checkbox" data-smart-punctuation>
+            <div class="checkbox-field smart-punctuation-field">
+              <input id="smart-punctuation" type="checkbox" data-smart-punctuation>
               <span>
-                <strong>Smart punctuation</strong>
-                <small>Use curly apostrophes and «quotes» while typing.</small>
+                <label for="smart-punctuation"><strong>Smart punctuation</strong></label>
+                <small>
+                  <label for="smart-punctuation">Use curly apostrophes and «quotes» while typing.</label>
+                  <button class="inline-link-button" type="button" data-smart-punctuation-replace>Replace all now</button>
+                </small>
               </span>
-            </label>
+            </div>
           </div>
 
           <section class="sidebar-section" aria-labelledby="cover-title">
@@ -254,7 +262,7 @@
           <details class="sidebar-section output-panel">
             <summary>
               <span>Generated Markdown</span>
-              <button class="output-copy-button" type="button" data-copy aria-label="Copy generated markdown" title="Copy">
+              <button class="output-copy-button" type="button" data-copy aria-label="Copy generated markdown" data-tooltip="Copy">
                 <svg class="output-copy-icon" viewBox="0 0 24 24" focusable="false" aria-hidden="true">
                   <path d="M7 4a3 3 0 0 1 3-3h7a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-1v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3h1V4Zm2 1h4a3 3 0 0 1 3 3v7h1a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1h-7a1 1 0 0 0-1 1v1ZM6 7a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1H6Z"></path>
                 </svg>
@@ -267,9 +275,13 @@
           </details>
           <footer class="app-meta">
             <p class="app-version" data-app-version data-app-build-tooltip>lepapier.app v0.1.0</p>
+            <p class="app-update" data-pwa-update hidden>
+              New version available.
+              <button class="inline-link-button" type="button" data-pwa-update-reload>Reload?</button>
+            </p>
             <div class="app-meta-actions">
               <a class="app-release-link" href="https://github.com/chatenhancer/lepapier/releases" target="_blank" rel="noreferrer" data-app-release-notes>Release notes</a>
-              <button class="app-copy-button" type="button" data-copy-bug-report aria-label="Copy bug report details" title="Copy bug report details">
+              <button class="app-copy-button" type="button" data-copy-bug-report aria-label="Copy bug report details" data-tooltip="Copy bug report details">
                 <svg class="output-copy-icon" viewBox="0 0 24 24" focusable="false" aria-hidden="true">
                   <path d="M7 4a3 3 0 0 1 3-3h7a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-1v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3h1V4Zm2 1h4a3 3 0 0 1 3 3v7h1a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1h-7a1 1 0 0 0-1 1v1ZM6 7a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1H6Z"></path>
                 </svg>

@@ -13,7 +13,8 @@ import {
 } from '../../markdown/markdown-renderer';
 import {
   getSelectionRange,
-  replaceSelection
+  replaceSelection,
+  scrollSelectionIntoView
 } from '../../markdown/selection';
 import {
   applyToolbarFormattingToSource,
@@ -26,7 +27,7 @@ import type { ImageAsset } from '../../shared/types';
 export interface EditorPreviewWorkflow {
   insertFormatting(type: string): void;
   normalizeFieldSmartPunctuation(field: EditorFieldElement, fieldName: EditorFieldName): void;
-  normalizeSmartPunctuationFields(options?: { record?: boolean }): void;
+  normalizeSmartPunctuationFields(options?: { force?: boolean; record?: boolean }): boolean;
   renderMarkdown(markdown: string, options?: RenderMarkdownOptions): string;
   renderPreview(): void;
   renderPreviewMode(options?: { focusWrite?: boolean }): void;
@@ -117,7 +118,7 @@ export function createEditorPreviewWorkflow({
       renderPreview();
     } else if (focusWrite) {
       editorLayout.resizeBodyInput();
-      bodyInput.focus();
+      bodyInput.focus({ preventScroll: true });
     } else {
       editorLayout.resizeBodyInput();
     }
@@ -128,8 +129,8 @@ export function createEditorPreviewWorkflow({
     normalizeSmartPunctuationEditorField(fieldName, field);
   };
 
-  const normalizeSmartPunctuationFields = ({ record = false }: { record?: boolean } = {}) => {
-    if (!isSmartPunctuationEnabled()) return;
+  const normalizeSmartPunctuationFields = ({ force = false, record = false }: { force?: boolean; record?: boolean } = {}) => {
+    if (!force && !isSmartPunctuationEnabled()) return false;
 
     const changed = normalizeSmartPunctuationEditorFields({
       getField: (fieldName) => fields.get(fieldName),
@@ -138,12 +139,20 @@ export function createEditorPreviewWorkflow({
     if (changed) {
       editorLayout.resizeBodyInput();
     }
+    return changed;
   };
 
   const getRenderedPreviewSelectionSourceRange = () => getPreviewSelectionSourceRange({
     body: fields.get('body')?.value || '',
     preview
   });
+
+  const getWriteModeInsertionTopOffset = () => {
+    const toolbar = bodyInput.ownerDocument.querySelector<HTMLElement>('.toolbar');
+    const toolbarRect = toolbar?.getBoundingClientRect();
+
+    return toolbarRect ? Math.max(0, toolbarRect.bottom) + 18 : 24;
+  };
 
   const applyPreviewFormatting = (type: string): boolean => {
     const selectionRange = getRenderedPreviewSelectionSourceRange();
@@ -175,6 +184,11 @@ export function createEditorPreviewWorkflow({
     recordHistory();
     replaceSelection(bodyInput, createToolbarFormattingSnippet(type, selected));
     sync();
+    scrollSelectionIntoView(bodyInput, {
+      block: 'center',
+      bottomOffset: 56,
+      topOffset: getWriteModeInsertionTopOffset()
+    });
     scheduleMetadata();
   };
 

@@ -155,6 +155,7 @@ export function startEditorController(): void {
     selectAllDocumentsInput,
     sidebar,
     smartPunctuationInput,
+    smartPunctuationReplaceButton,
     themeToggle,
     toolbar,
     tooltipLayer,
@@ -530,6 +531,7 @@ export function startEditorController(): void {
     showSaveState,
     selectAllDocumentsInput,
     smartPunctuationInput,
+    smartPunctuationReplaceButton,
     switchDocument: documentActions.switchDocument,
     sync,
     toggleAllDocumentSelection,
@@ -573,7 +575,7 @@ export function startEditorController(): void {
       button.textContent = label;
     }
     deleteSelectedButton.hidden = selectedCount === 0;
-    deleteSelectedButton.textContent = selectedCount > 1 ? `Delete selected (${selectedCount})` : 'Delete selected';
+    deleteSelectedButton.textContent = selectedCount > 1 ? `Remove selected (${selectedCount})` : 'Remove selected';
     selectAllDocumentsInput.checked = selectedCount > 0 && selectedCount === session.documents.length;
     selectAllDocumentsInput.indeterminate = selectedCount > 0 && selectedCount < session.documents.length;
     documentsSidebar.classList.toggle('has-selection', selectedCount > 0);

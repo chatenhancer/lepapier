@@ -19,6 +19,14 @@ export interface RenderMarkdownOptions {
   sourceMap?: boolean;
 }
 
+type ListType = 'ol' | 'ul';
+type TableAlignment = '' | 'center' | 'left' | 'right';
+type TableCell = {
+  end: number;
+  text: string;
+  start: number;
+};
+
 export function renderMarkdown(markdown: string, options: RenderMarkdownOptions = {}): string {
   const sourceMap = options.sourceMap ?? true;
   const imageState = options.imageState ?? { nextIndex: 0 };
@@ -26,6 +34,7 @@ export function renderMarkdown(markdown: string, options: RenderMarkdownOptions 
   const lineStarts = getLineStarts(markdown);
   const html: string[] = [];
   let listItems: string[] = [];
+  let listType: ListType | null = null;
   let inCode = false;
   let codeLines: string[] = [];
   let mediaBlockIndex = 0;
@@ -73,6 +82,23 @@ export function renderMarkdown(markdown: string, options: RenderMarkdownOptions 
       continue;
     }
 
+    const table = renderTableAt(lines, lineStarts, index, {
+      ...options,
+      imageState
+    });
+    if (table) {
+      flushList();
+      html.push(table.html);
+      index = table.endIndex;
+      continue;
+    }
+
+    if (isHorizontalRule(line.trim())) {
+      flushList();
+      html.push('<hr>');
+      continue;
+    }
+
     const heading = /^(#{1,3})\s+(.+)$/.exec(line);
     if (heading) {
       html.push(`<h${heading[1].length}${getSourceAttributes(sourceMap, lineStart, lineEnd)}>${renderInline(heading[2], {
@@ -82,8 +108,33 @@ export function renderMarkdown(markdown: string, options: RenderMarkdownOptions 
       continue;
     }
 
-    if (line.startsWith('- ')) {
-      listItems.push(`<li${getSourceAttributes(sourceMap, lineStart, lineEnd)}>${renderInline(line.slice(2), {
+    const taskListItem = /^(-\s+\[([ xX])\]\s+)(.+)$/.exec(line);
+    if (taskListItem) {
+      const checked = taskListItem[2].toLowerCase() === 'x';
+      addListItem('ul', [
+        `<li${getSourceAttributes(sourceMap, lineStart, lineEnd)} data-list-marker="${escapeAttribute(taskListItem[1])}" class="task-list-item">`,
+        `<input type="checkbox" ${checked ? 'checked ' : ''}disabled aria-label="${checked ? 'Completed task' : 'Open task'}">`,
+        `<span>${renderInline(taskListItem[3], {
+          ...options,
+          imageState
+        })}</span>`,
+        '</li>'
+      ].join(''));
+      continue;
+    }
+
+    const orderedListItem = /^(\d+[.)]\s+)(.+)$/.exec(line);
+    if (orderedListItem) {
+      addListItem('ol', `<li${getSourceAttributes(sourceMap, lineStart, lineEnd)} data-list-marker="${escapeAttribute(orderedListItem[1])}">${renderInline(orderedListItem[2], {
+        ...options,
+        imageState
+      })}</li>`);
+      continue;
+    }
+
+    const unorderedListItem = /^(-\s+)(.+)$/.exec(line);
+    if (unorderedListItem) {
+      addListItem('ul', `<li${getSourceAttributes(sourceMap, lineStart, lineEnd)} data-list-marker="${escapeAttribute(unorderedListItem[1])}">${renderInline(unorderedListItem[2], {
         ...options,
         imageState
       })}</li>`);
@@ -112,10 +163,20 @@ export function renderMarkdown(markdown: string, options: RenderMarkdownOptions 
   flushList();
   return html.join('\n') || '<p>Start writing to see the preview.</p>';
 
+  function addListItem(type: ListType, item: string): void {
+    if (listType && listType !== type) {
+      flushList();
+    }
+    listType = type;
+    listItems.push(item);
+  }
+
   function flushList(): void {
     if (!listItems.length) return;
-    html.push(`<ul>${listItems.join('')}</ul>`);
+    const type = listType || 'ul';
+    html.push(`<${type}>${listItems.join('')}</${type}>`);
     listItems = [];
+    listType = null;
   }
 }
 
@@ -174,8 +235,7 @@ function renderMediaBlock(
   const copyHtml = sideText
     ? renderMarkdown(sideText, {
         ...options,
-        imageState,
-        sourceMap: false
+        imageState
       })
     : `<p>${escapeHtml(copyText)}</p>`;
   const imageHtml = `<div class="preview-media-image">${renderInline(imageLine, {
@@ -217,27 +277,28 @@ function renderInline(source: string, options: RenderMarkdownOptions): string {
     const imageIndex = imageState.nextIndex;
     imageState.nextIndex += 1;
     return [
-      `<span class="preview-image-frame" data-image-index="${imageIndex}" data-image-path="${escapeAttribute(path)}" data-image-width="${percent}" data-image-rotation="${rotation}" data-image-crop="${cropEnabled ? 'true' : 'false'}" data-image-crop-ratio="${activeCropRatio}" data-image-focus-x="${focusX}" data-image-focus-y="${focusY}" data-image-align="${escapeAttribute(align)}" data-image-display="${escapeAttribute(display)}" data-image-shadow="${shadow ? 'smooth' : 'none'}" style="${escapeAttribute(style)}" tabindex="0" title="Click to select, then paste an image to replace it">`,
-      '<span class="preview-image-crop-box" title="Drag to reposition crop">',
+      `<span class="preview-image-frame" data-image-index="${imageIndex}" data-image-path="${escapeAttribute(path)}" data-image-width="${percent}" data-image-rotation="${rotation}" data-image-crop="${cropEnabled ? 'true' : 'false'}" data-image-crop-ratio="${activeCropRatio}" data-image-focus-x="${focusX}" data-image-focus-y="${focusY}" data-image-align="${escapeAttribute(align)}" data-image-display="${escapeAttribute(display)}" data-image-shadow="${shadow ? 'smooth' : 'none'}" style="${escapeAttribute(style)}" tabindex="0" data-tooltip="Click to select. Paste to replace, Delete to remove.">`,
+      '<span class="preview-image-crop-box" data-tooltip="Click to select. Paste to replace, Delete to remove.">',
       `<img src="${escapeAttribute(resolvedHref)}" alt="${escapeAttribute(unescapeHtml(alt))}">`,
       '</span>',
       '<span class="preview-image-tools">',
-      '<button type="button" data-image-align-center>Center</button>',
-      '<button type="button" data-image-side-text="right">Text right</button>',
-      '<button type="button" data-image-side-text="left">Text left</button>',
-      `<button type="button" data-image-crop-toggle aria-pressed="${cropEnabled ? 'true' : 'false'}">Crop</button>`,
-      `<button type="button" data-image-display-inline aria-pressed="${display === 'inline' ? 'true' : 'false'}">Inline</button>`,
-      `<button type="button" data-image-shadow-toggle aria-pressed="${shadow ? 'true' : 'false'}">Shadow</button>`,
+      `<button type="button" data-image-align-center aria-pressed="${align === 'center' ? 'true' : 'false'}" data-tooltip="${align === 'center' ? 'Stop centering image' : 'Center image'}">Center</button>`,
+      '<button type="button" data-image-side-text="right" data-tooltip="Add text to the right">Text right</button>',
+      '<button type="button" data-image-side-text="left" data-tooltip="Add text to the left">Text left</button>',
+      `<button type="button" data-image-crop-toggle aria-pressed="${cropEnabled ? 'true' : 'false'}" data-tooltip="${cropEnabled ? 'Turn off crop' : 'Crop image'}">Crop</button>`,
+      `<button type="button" data-image-display-inline aria-pressed="${display === 'inline' ? 'true' : 'false'}" data-tooltip="${display === 'inline' ? 'Show as block image' : 'Show inline'}">Inline</button>`,
+      `<button type="button" data-image-shadow-toggle aria-pressed="${shadow ? 'true' : 'false'}" data-tooltip="${shadow ? 'Remove image shadow' : 'Add image shadow'}">Shadow</button>`,
       '</span>',
-      '<span class="preview-image-rotate" aria-hidden="true" title="Drag to tilt image"><svg viewBox="0 0 28 24" focusable="false"><path d="M4.6 13.6C6.9 8.4 21.1 8.4 23.4 13.6M4.6 13.6l.3-4.45M4.6 13.6l4.55-.35M23.4 13.6l-.3-4.45M23.4 13.6l-4.55-.35"></path></svg></span>',
-      '<span class="preview-image-crop-resize" aria-hidden="true" title="Drag to change crop height"></span>',
-      '<span class="preview-image-resize" aria-hidden="true"></span>',
+      '<span class="preview-image-rotate" aria-hidden="true" data-tooltip="Drag to tilt image"><svg viewBox="0 0 28 24" focusable="false"><path d="M4.6 13.6C6.9 8.4 21.1 8.4 23.4 13.6M4.6 13.6l.3-4.45M4.6 13.6l4.55-.35M23.4 13.6l-.3-4.45M23.4 13.6l-4.55-.35"></path></svg></span>',
+      '<span class="preview-image-crop-resize" aria-hidden="true" data-tooltip="Drag to change crop height"></span>',
+      '<span class="preview-image-resize" aria-hidden="true" data-tooltip="Drag to resize image"></span>',
       '</span>'
     ].join('');
   });
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, label, href) => {
     return `<a href="${escapeAttribute(unescapeHtml(href))}">${label}</a>`;
   });
+  html = html.replace(/~~([^~]+)~~/g, '<s>$1</s>');
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
   html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
@@ -275,6 +336,11 @@ function createRenderedTextSourceMap(source: string): { sourceIndexes: number[];
       continue;
     }
 
+    if (source.startsWith('~~', index)) {
+      index += 2;
+      continue;
+    }
+
     if (source[index] === '*' || source[index] === '`') {
       index += 1;
       continue;
@@ -294,6 +360,10 @@ function createRenderedTextSourceMap(source: string): { sourceIndexes: number[];
 function getBlockContentStart(source: string): number {
   const heading = /^(#{1,3})\s+/.exec(source);
   if (heading) return heading[0].length;
+  const taskListItem = /^-\s+\[[ xX]\]\s+/.exec(source);
+  if (taskListItem) return taskListItem[0].length;
+  const orderedListItem = /^\d+[.)]\s+/.exec(source);
+  if (orderedListItem) return orderedListItem[0].length;
   if (source.startsWith('- ') || source.startsWith('> ')) return 2;
   return 0;
 }
@@ -322,6 +392,140 @@ function getMarkdownLinkRange(source: string, start: number): { end: number; lab
 
 function getSourceAttributes(enabled: boolean, start: number, end: number): string {
   return enabled ? ` data-source-start="${start}" data-source-end="${end}"` : '';
+}
+
+function renderTableAt(
+  lines: string[],
+  lineStarts: number[],
+  index: number,
+  options: RenderMarkdownOptions
+): { endIndex: number; html: string } | null {
+  const sourceMap = options.sourceMap ?? true;
+  const headerCells = splitTableRow(lines[index], lineStarts[index] || 0);
+  const alignments = parseTableDivider(lines[index + 1]);
+  if (!headerCells || !alignments || headerCells.length !== alignments.length) return null;
+
+  const rows: TableCell[][] = [];
+  let endIndex = index + 1;
+  for (let rowIndex = index + 2; rowIndex < lines.length; rowIndex += 1) {
+    const rowCells = splitTableRow(lines[rowIndex], lineStarts[rowIndex] || 0);
+    if (!rowCells) break;
+    rows.push(normalizeTableCells(rowCells, headerCells.length));
+    endIndex = rowIndex;
+  }
+
+  const headerHtml = headerCells
+    .map((cell, cellIndex) => `<th${getTableCellAttributes(alignments[cellIndex], cell, sourceMap, 0, cellIndex)}>${renderInline(cell.text, options)}</th>`)
+    .join('');
+  const bodyHtml = rows
+    .map((row, rowIndex) => `<tr>${row.map((cell, cellIndex) => `<td${getTableCellAttributes(alignments[cellIndex], cell, sourceMap, rowIndex + 1, cellIndex)}>${renderInline(cell.text, options)}</td>`).join('')}</tr>`)
+    .join('');
+  const tableStart = lineStarts[index] || 0;
+  const tableEnd = (lineStarts[endIndex] || 0) + lines[endIndex].length;
+  const tableAttributes = sourceMap ? ` data-table-start="${tableStart}" data-table-end="${tableEnd}"` : '';
+
+  return {
+    endIndex,
+    html: [
+      `<div class="preview-table-scroll"${tableAttributes}>`,
+      '<table>',
+      `<thead><tr>${headerHtml}</tr></thead>`,
+      bodyHtml ? `<tbody>${bodyHtml}</tbody>` : '',
+      '</table>',
+      '</div>'
+    ].join('')
+  };
+}
+
+function splitTableRow(line: string | undefined, lineStart = 0): TableCell[] | null {
+  if (!line || !line.includes('|')) return null;
+
+  const trimmedStart = line.search(/\S/);
+  if (trimmedStart < 0) return null;
+
+  let contentStart = trimmedStart;
+  let contentEnd = line.length - (/\s*$/.exec(line)?.[0].length || 0);
+  if (line[contentStart] === '|') contentStart += 1;
+  if (line[contentEnd - 1] === '|') contentEnd -= 1;
+
+  const cells: TableCell[] = [];
+  let cellStart = contentStart;
+  for (let cursor = contentStart; cursor <= contentEnd; cursor += 1) {
+    if (cursor < contentEnd && (line[cursor] !== '|' || line[cursor - 1] === '\\')) continue;
+
+    cells.push(createTableCell(line, lineStart, cellStart, cursor));
+    cellStart = cursor + 1;
+  }
+  return cells.length > 1 ? cells : null;
+}
+
+function parseTableDivider(line: string | undefined): TableAlignment[] | null {
+  const cells = splitTableRow(line);
+  if (!cells) return null;
+
+  const alignments: TableAlignment[] = [];
+  for (const cell of cells) {
+    const value = cell.text.replace(/\s+/g, '');
+    if (!/^:?-{3,}:?$/.test(value)) return null;
+
+    const alignsLeft = value.startsWith(':');
+    const alignsRight = value.endsWith(':');
+    if (alignsLeft && alignsRight) {
+      alignments.push('center');
+    } else if (alignsRight) {
+      alignments.push('right');
+    } else if (alignsLeft) {
+      alignments.push('left');
+    } else {
+      alignments.push('');
+    }
+  }
+
+  return alignments;
+}
+
+function normalizeTableCells(cells: TableCell[], length: number): TableCell[] {
+  return Array.from({ length }, (_value, index) => cells[index] || createEmptyTableCell(cells[cells.length - 1]));
+}
+
+function getTableCellAttributes(
+  alignment: TableAlignment,
+  cell: TableCell,
+  sourceMap: boolean,
+  rowIndex: number,
+  columnIndex: number
+): string {
+  return [
+    ` data-table-row="${rowIndex}" data-table-column="${columnIndex}"`,
+    alignment ? ` data-align="${alignment}"` : '',
+    getSourceAttributes(sourceMap, cell.start, cell.end)
+  ].join('');
+}
+
+function createTableCell(line: string, lineStart: number, start: number, end: number): TableCell {
+  const raw = line.slice(start, end);
+  const leadingWhitespace = raw.search(/\S/);
+  const contentStart = leadingWhitespace < 0 ? start : start + leadingWhitespace;
+  const trailingWhitespace = /\s*$/.exec(raw)?.[0].length || 0;
+  const contentEnd = Math.max(contentStart, end - trailingWhitespace);
+  return {
+    end: lineStart + contentEnd,
+    start: lineStart + contentStart,
+    text: line.slice(contentStart, contentEnd).replace(/\\\|/g, '|')
+  };
+}
+
+function createEmptyTableCell(previousCell: TableCell | undefined): TableCell {
+  const offset = previousCell?.end || 0;
+  return {
+    end: offset,
+    start: offset,
+    text: ''
+  };
+}
+
+function isHorizontalRule(line: string): boolean {
+  return /^(?:-{3,}|\*{3,}|_{3,})$/.test(line.replace(/\s+/g, ''));
 }
 
 function getMediaBlockDirection(line: string): 'left' | 'right' | null {

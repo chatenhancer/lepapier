@@ -33,7 +33,7 @@ Feature set and robustness will improve in the future as I go along.
 ## Features (unfinished)
 
 - Local-first editing with drafts saved in the browser.
-- Multi-document workspace with document selection, bulk download, and bulk delete.
+- Multi-document workspace with document selection, bulk download, and bulk removal.
 - Open a Markdown file or a folder of Markdown files.
 - Open and sync a Markdown file or folder using the File System Access API where supported.
 - Import referenced image assets from opened folders.

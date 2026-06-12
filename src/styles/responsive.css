@@ -6,11 +6,22 @@
 
   .documents-sidebar {
     position: static;
+    grid-template-rows: none;
     width: min(100%, var(--paper-width));
     max-height: none;
     justify-self: center;
     margin-bottom: 14px;
     padding: 0;
+  }
+
+  .document-list-shell {
+    height: auto;
+    max-height: min(54vh, 460px);
+  }
+
+  .document-list {
+    height: auto;
+    max-height: inherit;
   }
 
   .document-list {
@@ -28,6 +39,7 @@
   }
 
   .sidebar-scroll {
+    height: auto;
     max-height: none;
   }
 

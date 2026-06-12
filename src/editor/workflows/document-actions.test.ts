@@ -14,7 +14,7 @@ describe('editor document actions', () => {
     vi.unstubAllGlobals();
   });
 
-  it('bulk deletes selected documents after one confirmation', () => {
+  it('bulk removes selected documents after one confirmation', () => {
     const documents = [createDocument('first'), createDocument('second'), createDocument('third')];
     const selectedDocumentIds = new Set(['first', 'third']);
     let activeDocumentId = 'second';
@@ -50,7 +50,7 @@ describe('editor document actions', () => {
     actions.deleteDocuments(['first', 'third']);
 
     expect(confirm).toHaveBeenCalledOnce();
-    expect(confirm.mock.calls[0][0]).toContain('Delete 2 selected documents');
+    expect(confirm.mock.calls[0][0]).toContain('Remove 2 selected documents');
     expect(documents.map((documentRecord) => documentRecord.id)).toEqual(['second']);
     expect(activeDocumentId).toBe('second');
     expect(selectedDocumentIds.size).toBe(0);

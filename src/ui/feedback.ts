@@ -59,12 +59,12 @@ export function createCopyButtonFeedback({
       windowTarget.clearTimeout(feedbackTimeout);
       button.classList.add('is-copied');
       button.setAttribute('aria-label', copiedLabel);
-      button.title = copiedTitle;
+      button.dataset.tooltip = copiedTitle;
 
       feedbackTimeout = windowTarget.setTimeout(() => {
         button.classList.remove('is-copied');
         button.setAttribute('aria-label', defaultLabel);
-        button.title = defaultTitle;
+        button.dataset.tooltip = defaultTitle;
       }, feedbackMs);
     }
   };

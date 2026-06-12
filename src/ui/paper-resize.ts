@@ -26,13 +26,13 @@ export function setupPaperResizeController({
   paper,
   revealDistance = 42,
   setWidth,
-  verticalSlack = 88
+  verticalSlack = 0
 }: PaperResizeOptions): PaperResizeController {
   const updateVisibility = (event: PointerEvent, sheetRect: DOMRect) => {
     if (body.classList.contains('is-resizing-sheet')) return;
 
-    const handleCenterY = sheetRect.top + sheetRect.height / 2;
-    const nearHandleY = Math.abs(event.clientY - handleCenterY) <= verticalSlack;
+    const nearHandleY = event.clientY >= sheetRect.top - verticalSlack
+      && event.clientY <= sheetRect.bottom + verticalSlack;
     const nearLeftHandle = nearHandleY
       && event.clientX >= sheetRect.left - revealDistance
       && event.clientX <= sheetRect.left + revealDistance;

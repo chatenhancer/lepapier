@@ -7,6 +7,8 @@ import {
   parseImageAttributes
 } from '../markdown/image-attributes';
 import {
+  getMarkdownImageMatch,
+  getMarkdownImageOccurrences,
   getMediaBlockDirection,
   lineReferencesImagePath
 } from '../markdown/markdown-editing';
@@ -28,6 +30,25 @@ export function setMarkdownImageAlignment(markdown: string, path: string, align:
     ...attributes,
     align
   }));
+}
+
+export function removeMarkdownImage(markdown: string, path: string, imageIndex: number): string {
+  const occurrence = getMarkdownImageOccurrences(markdown)
+    .find((item) => item.index === imageIndex && item.path === path);
+  if (!occurrence) return markdown;
+
+  const lines = markdown.split('\n');
+  const lineIndex = getLineIndexAtOffset(lines, occurrence.start);
+  const mediaBlock = getMediaBlockRange(lines, lineIndex);
+  if (mediaBlock) {
+    const selectedLine = lines[lineIndex]?.trim() || '';
+    const selectedImage = getMarkdownImageMatch(selectedLine);
+    if (selectedImage?.path === path) {
+      return removeMediaBlockImage(lines, mediaBlock, lineIndex);
+    }
+  }
+
+  return removeImageOccurrence(markdown, occurrence.start, occurrence.end, lines, lineIndex);
 }
 
 export function setMarkdownImageShadow(markdown: string, path: string, shadow: boolean): string {
@@ -119,4 +140,85 @@ function updateMarkdownImageAttributes(
   return markdown.replace(pattern, (_match: string, imageMarkdown: string, attributes: string | undefined) => {
     return `${imageMarkdown}${formatImageAttributes(update(parseImageAttributes(attributes)))}`;
   });
+}
+
+function removeImageOccurrence(
+  markdown: string,
+  start: number,
+  end: number,
+  lines: string[],
+  lineIndex: number
+): string {
+  const line = lines[lineIndex] || '';
+  const occurrenceText = markdown.slice(start, end);
+  if (line.trim() === occurrenceText.trim()) {
+    lines.splice(lineIndex, 1);
+    cleanBlankLinesAround(lines, lineIndex);
+    return lines.join('\n');
+  }
+
+  return `${markdown.slice(0, start)}${markdown.slice(end)}`;
+}
+
+function removeMediaBlockImage(
+  lines: string[],
+  mediaBlock: { endIndex: number; startIndex: number },
+  imageLineIndex: number
+): string {
+  const blockLines = lines.slice(mediaBlock.startIndex + 1, mediaBlock.endIndex);
+  const relativeImageLineIndex = imageLineIndex - mediaBlock.startIndex - 1;
+  const replacementText = blockLines
+    .filter((_line, index) => index !== relativeImageLineIndex)
+    .join('\n')
+    .trim();
+  const replacementLines = replacementText ? replacementText.split('\n') : [];
+  const deleteCount = mediaBlock.endIndex - mediaBlock.startIndex + (mediaBlock.endIndex < lines.length ? 1 : 0);
+  lines.splice(mediaBlock.startIndex, deleteCount, ...replacementLines);
+  cleanBlankLinesAround(lines, mediaBlock.startIndex);
+  return lines.join('\n');
+}
+
+function getMediaBlockRange(lines: string[], lineIndex: number): { endIndex: number; startIndex: number } | null {
+  for (let index = 0; index < lines.length; index += 1) {
+    if (!getMediaBlockDirection(lines[index].trim())) continue;
+
+    const startIndex = index;
+    let endIndex = index + 1;
+    while (endIndex < lines.length && lines[endIndex].trim() !== ':::') {
+      endIndex += 1;
+    }
+    if (lineIndex > startIndex && lineIndex < endIndex) {
+      return { endIndex, startIndex };
+    }
+    index = endIndex;
+  }
+
+  return null;
+}
+
+function getLineIndexAtOffset(lines: string[], offset: number): number {
+  let cursor = 0;
+  for (let index = 0; index < lines.length; index += 1) {
+    const lineEnd = cursor + lines[index].length;
+    if (offset <= lineEnd) return index;
+    cursor = lineEnd + 1;
+  }
+
+  return Math.max(0, lines.length - 1);
+}
+
+function cleanBlankLinesAround(lines: string[], index: number): void {
+  if (index > 0 && index < lines.length && isBlankLine(lines[index - 1]) && isBlankLine(lines[index])) {
+    lines.splice(index, 1);
+  }
+  while (lines.length && isBlankLine(lines[0])) {
+    lines.shift();
+  }
+  while (lines.length && isBlankLine(lines[lines.length - 1])) {
+    lines.pop();
+  }
+}
+
+function isBlankLine(line: string | undefined): boolean {
+  return !String(line || '').trim();
 }

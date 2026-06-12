@@ -28,7 +28,7 @@ export interface EditorInteractionOptions {
   insertDroppedImages(files: File[]): void;
   insertFormatting(type: string): void;
   isPreviewActive(): boolean;
-  normalizeSmartPunctuationFields(options: { record?: boolean }): void;
+  normalizeSmartPunctuationFields(options: { force?: boolean; record?: boolean }): boolean;
   openDocumentButton: HTMLButtonElement;
   openDocumentFileInput: HTMLInputElement;
   openDocumentFileActionButton: HTMLButtonElement;
@@ -55,6 +55,7 @@ export interface EditorInteractionOptions {
   showSaveState(text: string): void;
   selectAllDocumentsInput: HTMLInputElement;
   smartPunctuationInput: HTMLInputElement;
+  smartPunctuationReplaceButton: HTMLButtonElement;
   switchDocument(documentId: string): void;
   sync(): void;
   toggleAllDocumentSelection(selected: boolean): void;
@@ -112,6 +113,7 @@ export function setupEditorInteractions({
   showSaveState,
   selectAllDocumentsInput,
   smartPunctuationInput,
+  smartPunctuationReplaceButton,
   switchDocument,
   sync,
   toggleAllDocumentSelection,
@@ -247,6 +249,16 @@ export function setupEditorInteractions({
     }
 
     persistDraft();
+  });
+  smartPunctuationReplaceButton.addEventListener('click', () => {
+    const changed = normalizeSmartPunctuationFields({ force: true, record: true });
+    if (changed) {
+      sync();
+      showSaveState('Replaced smart punctuation');
+      return;
+    }
+
+    showSaveState('Smart punctuation already clean');
   });
 
   for (const button of insertButtons) {

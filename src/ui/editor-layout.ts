@@ -49,8 +49,14 @@ export function setupEditorLayoutController({
       return;
     }
 
-    setSidebarAvoidance(0);
-    setSidebarAvoidance(getSidebarAvoidance(paper.getBoundingClientRect(), sidebar.getBoundingClientRect()));
+    const sidebarStyle = windowTarget.getComputedStyle(sidebar);
+    const sidebarLeft = getFixedRightSidebarLeft({
+      fallbackLeft: sidebar.getBoundingClientRect().left,
+      right: sidebarStyle.right,
+      viewportWidth: windowTarget.innerWidth,
+      width: sidebarStyle.width
+    });
+    setSidebarAvoidance(getSidebarAvoidance(paper.getBoundingClientRect(), { left: sidebarLeft }));
   };
 
   const scheduleSidebarAvoidanceUpdate = () => {
@@ -123,6 +129,28 @@ export function getSidebarAvoidance(
   return Math.max(0, Math.ceil(paperRect.right + gap - sidebarRect.left));
 }
 
+export function getFixedRightSidebarLeft({
+  fallbackLeft,
+  right,
+  viewportWidth,
+  width
+}: {
+  fallbackLeft: number;
+  right: string;
+  viewportWidth: number;
+  width: string;
+}): number {
+  const rightPixels = parseCssPixelValue(right);
+  const widthPixels = parseCssPixelValue(width);
+  if (!Number.isFinite(rightPixels) || !Number.isFinite(widthPixels)) return fallbackLeft;
+  return viewportWidth - rightPixels - widthPixels;
+}
+
 function getSidebarRevealDistance(documentElement: HTMLElement, windowTarget: Window): number {
   return Number.parseFloat(windowTarget.getComputedStyle(documentElement).getPropertyValue('--sidebar-width')) + 110;
+}
+
+function parseCssPixelValue(value: string): number {
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
 }

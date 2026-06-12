@@ -11,7 +11,7 @@
   background: var(--page);
   color-scheme: light;
   font-family: "Inter", sans-serif;
-  font-synthesis: none;
+  font-synthesis: style;
   text-rendering: optimizeLegibility;
   --accent: #000000;
   --accent-ink: #ffffff;
@@ -31,7 +31,7 @@
   --header-bg: rgba(255, 255, 255, 0.92);
   --header-height: 58px;
   --header-logo-offset: 20px;
-  --header-logo-size: 64px;
+  --header-logo-size: 44px;
   --heading: #000000;
   --ink: #000000;
   --line: #e8e8e8;

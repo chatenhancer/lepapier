@@ -48,6 +48,7 @@ export interface EditorElements {
   selectAllDocumentsInput: HTMLInputElement;
   sidebar: HTMLElement;
   smartPunctuationInput: HTMLInputElement;
+  smartPunctuationReplaceButton: HTMLButtonElement;
   themeToggle: HTMLButtonElement;
   toolbar: HTMLElement;
   tooltipLayer: HTMLElement;
@@ -100,6 +101,7 @@ export function getEditorElements(): EditorElements {
     selectAllDocumentsInput: requireElement<HTMLInputElement>('[data-select-all-documents]'),
     sidebar: requireElement<HTMLElement>('[data-sidebar]'),
     smartPunctuationInput: requireElement<HTMLInputElement>('[data-smart-punctuation]'),
+    smartPunctuationReplaceButton: requireElement<HTMLButtonElement>('[data-smart-punctuation-replace]'),
     themeToggle: requireElement<HTMLButtonElement>('[data-theme-toggle]'),
     toolbar: requireElement<HTMLElement>('.toolbar'),
     tooltipLayer: requireElement<HTMLElement>('[data-tooltip-layer]'),

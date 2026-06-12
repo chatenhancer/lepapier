@@ -1,12 +1,14 @@
 .documents-sidebar {
   position: fixed;
   top: 80px;
+  bottom: 18px;
   left: max(24px, calc((100vw - 1420px) / 2));
   z-index: 8;
   display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto auto auto;
   gap: 14px;
   width: 236px;
-  max-height: calc(100vh - 98px);
+  min-height: 0;
   overflow: visible;
   padding: 4px 6px 24px 0;
   opacity: 0.18;
@@ -107,7 +109,8 @@
 
 .document-list-shell {
   position: relative;
-  max-height: min(54vh, 460px);
+  min-height: 0;
+  height: 100%;
   overflow: hidden;
 }
 
@@ -136,7 +139,7 @@
 .document-list {
   display: grid;
   gap: 5px;
-  max-height: inherit;
+  height: 100%;
   overflow: auto;
   margin-right: -3px;
   padding-right: 3px;

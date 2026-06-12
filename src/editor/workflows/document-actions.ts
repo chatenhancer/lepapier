@@ -139,7 +139,7 @@ export function createEditorDocumentActions({
     const documentRecord = documents.find((candidate) => candidate.id === documentId);
     if (!documentRecord) return;
 
-    deleteDocumentRecords([documentId], `Delete "${getDocumentTitle(documentRecord)}" from this editor workspace?`);
+    deleteDocumentRecords([documentId], `Remove "${getDocumentTitle(documentRecord)}" from this workspace?`);
   };
 
   const deleteDocuments = (documentIds: string[]) => {
@@ -148,7 +148,7 @@ export function createEditorDocumentActions({
 
     deleteDocumentRecords(
       documentIds,
-      `Delete ${selectedCount} selected document${selectedCount === 1 ? '' : 's'} from this editor workspace?\n\nSource files will not be deleted.`
+      `Remove ${selectedCount} selected document${selectedCount === 1 ? '' : 's'} from this workspace?\n\nSource files will not be changed.`
     );
   };
 

@@ -111,16 +111,124 @@
   font-size: 22px;
 }
 
-.preview p,
-.preview ul,
-.preview blockquote {
+.preview-body p,
+.preview-body ul,
+.preview-body ol,
+.preview-body blockquote {
   margin: 0 0 18px;
+}
+
+.preview-body ul,
+.preview-body ol {
+  padding-left: 1.3em;
+}
+
+.preview-body li {
+  padding-left: 0.12em;
+}
+
+.preview s {
+  color: var(--muted);
+  text-decoration-thickness: 1px;
+}
+
+.preview hr {
+  height: 1px;
+  border: 0;
+  background: var(--line);
+  margin: 30px 0;
 }
 
 .preview blockquote {
   padding-left: 16px;
   border-left: 3px solid var(--primary);
   color: var(--muted);
+}
+
+.preview .task-list-item {
+  display: flex;
+  gap: 9px;
+  align-items: baseline;
+  padding-left: 0;
+  list-style: none;
+}
+
+.preview .task-list-item input {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  transform: translateY(1px);
+}
+
+.preview-table-scroll {
+  overflow: auto;
+  margin: 0 0 22px;
+}
+
+.preview-table-controls {
+  position: sticky;
+  left: 0;
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  margin: 0 0 6px;
+}
+
+.preview-table-control {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 4px 8px;
+  background: var(--soft);
+  color: var(--control);
+  font-size: 12px;
+  font-weight: 560;
+  line-height: 1.2;
+}
+
+.preview-table-control:hover,
+.preview-table-control:focus-visible {
+  background: var(--control-hover);
+  outline: 0;
+}
+
+.preview table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.preview th,
+.preview td {
+  border-bottom: 1px solid var(--line);
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.preview th {
+  color: var(--control);
+  font-size: 12px;
+  font-weight: 620;
+}
+
+.preview th:first-child,
+.preview td:first-child {
+  padding-left: 0;
+}
+
+.preview th:last-child,
+.preview td:last-child {
+  padding-right: 0;
+}
+
+.preview [data-align="center"] {
+  text-align: center;
+}
+
+.preview [data-align="right"] {
+  text-align: right;
 }
 
 .preview img {

@@ -71,17 +71,16 @@ body.is-editor-at-top .toolbar:focus-within {
 
 .paper-width-resize {
   position: absolute;
-  top: 50%;
+  top: 0;
+  bottom: 0;
   width: 20px;
-  height: 84px;
   border: 0;
-  border-radius: 999px;
+  border-radius: 0;
   background: var(--resize-bg);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
   cursor: ew-resize;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(-50%);
   transition: opacity 140ms ease, box-shadow 140ms ease;
 }
 
@@ -95,10 +94,14 @@ body.is-editor-at-top .toolbar:focus-within {
 
 .paper-width-resize::before {
   position: absolute;
-  inset: 24px 8px;
+  top: 50%;
+  left: 8px;
+  width: 4px;
+  height: 36px;
   border-left: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
   border-right: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
   content: "";
+  transform: translateY(-50%);
 }
 
 .paper.is-resize-left-visible:not(.is-download-folding) .paper-width-resize-left,
