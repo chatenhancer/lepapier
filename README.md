@@ -47,6 +47,11 @@ It was mainly developed to cleanly create, edit, and export Markdown archives fo
 - Files opened through the File System Access API stay local to your browser session and granted handles.
 - Metadata suggestions use Chrome's built-in AI when available. After Chrome installs the model, metadata suggestions run locally.
 
+## Screenshots
+<img width="3680" height="2136" alt="image" src="https://github.com/user-attachments/assets/2c4efbb9-90f3-461b-a5fb-387d97e21a73" />
+<img width="3680" height="2136" alt="image" src="https://github.com/user-attachments/assets/b8204d5b-1a9e-4171-87e5-0ddf6d48040e" />
+
+
 ## Development
 
 Install dependencies:
