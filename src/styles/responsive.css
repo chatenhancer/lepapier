@@ -278,7 +278,8 @@
     padding: 42px 22px;
   }
 
-  .download-envelope {
+  .download-envelope,
+  .download-envelope-front-layer {
     top: var(--download-envelope-top, 250px);
     width: min(86%, 320px);
   }

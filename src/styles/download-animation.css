@@ -1,4 +1,5 @@
-.download-envelope {
+.download-envelope,
+.download-envelope-front-layer {
   position: absolute;
   top: var(--download-envelope-top, clamp(220px, 32vh, 350px));
   right: 0;
@@ -10,12 +11,70 @@
   pointer-events: none;
 }
 
-.download-envelope-art {
+.download-envelope {
+  z-index: 10;
+}
+
+.download-envelope-front-layer {
+  z-index: 12;
+}
+
+.download-paper-proxy {
+  position: absolute;
+  top: var(--download-paper-top, 0);
+  left: var(--download-paper-left, 0);
+  z-index: 11;
+  width: var(--download-paper-width, min(100%, var(--paper-width)));
+  height: var(--download-paper-height, 620px);
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--paper);
+  box-shadow: var(--paper-shadow);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(0, 0, 0);
+  transform-origin: 0 0;
+  will-change: height, opacity, transform, width;
+}
+
+.download-paper-proxy::before {
+  position: absolute;
+  inset: clamp(42px, 8%, 72px) clamp(22px, 9%, 74px);
+  background:
+    linear-gradient(var(--document-skeleton-line), var(--document-skeleton-line)) 0 0 / 44% 7px no-repeat,
+    linear-gradient(var(--document-skeleton-line), var(--document-skeleton-line)) 0 30px / 82% 7px no-repeat,
+    linear-gradient(var(--document-skeleton-line), var(--document-skeleton-line)) 0 59px / 72% 7px no-repeat,
+    linear-gradient(var(--document-skeleton-line), var(--document-skeleton-line)) 0 88px / 88% 7px no-repeat,
+    linear-gradient(var(--document-skeleton-line), var(--document-skeleton-line)) 0 117px / 58% 7px no-repeat,
+    linear-gradient(var(--document-skeleton-line), var(--document-skeleton-line)) 0 162px / 76% 7px no-repeat,
+    linear-gradient(var(--document-skeleton-line), var(--document-skeleton-line)) 0 191px / 66% 7px no-repeat,
+    linear-gradient(var(--document-skeleton-line), var(--document-skeleton-line)) 0 220px / 84% 7px no-repeat,
+    linear-gradient(var(--document-skeleton-line), var(--document-skeleton-line)) 0 249px / 48% 7px no-repeat,
+    linear-gradient(var(--document-skeleton-line), var(--document-skeleton-line)) 0 294px / 80% 7px no-repeat,
+    linear-gradient(var(--document-skeleton-line), var(--document-skeleton-line)) 0 323px / 62% 7px no-repeat;
+  content: "";
+}
+
+.download-paper-proxy.is-active {
+  animation:
+    download-paper-into-envelope var(--mail-duration) linear both,
+    download-paper-proxy-visibility var(--mail-duration) linear both;
+}
+
+.download-envelope-art,
+.download-envelope-front-art {
   display: block;
   width: 100%;
   height: auto;
   overflow: visible;
+}
+
+.download-envelope-art {
   filter: drop-shadow(0 22px 48px rgba(0, 0, 0, 0.18));
+}
+
+.download-envelope-front-art {
+  filter: none;
 }
 
 .download-envelope-body,
@@ -36,16 +95,6 @@
   stroke-linejoin: miter;
   stroke-width: 2;
   vector-effect: non-scaling-stroke;
-}
-
-.download-envelope-sheet {
-  fill: var(--paper);
-  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.12));
-  opacity: 0;
-  transform: translateY(-28px);
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
-  will-change: opacity, transform;
 }
 
 .download-envelope-hinge,
@@ -84,6 +133,10 @@
   animation: envelope-receive var(--mail-duration) var(--mail-ease) both;
 }
 
+.writing-column.is-mailing .download-envelope-front-layer {
+  animation: envelope-front-pocket-receive var(--mail-duration) linear both;
+}
+
 .writing-column.is-mailing .download-envelope-flap-open {
   animation: envelope-flap-open var(--mail-duration) var(--mail-ease) both;
 }
@@ -96,57 +149,74 @@
   animation: envelope-hinge-line var(--mail-duration) linear both;
 }
 
-.writing-column.is-mailing .download-envelope-sheet {
-  animation:
-    envelope-sheet-slide var(--mail-duration) var(--mail-insert-ease) both,
-    envelope-sheet-visibility var(--mail-duration) linear both;
-}
-
 .paper.is-download-folding {
-  z-index: 8;
-  overflow: hidden;
+  opacity: 0;
   pointer-events: none;
-  transform-origin: 50% 34%;
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
-  animation: paper-mail-fold var(--mail-duration) linear both;
-  will-change: transform;
 }
 
 .paper.is-download-folding .paper-width-resize {
   opacity: 0;
 }
 
-@keyframes paper-mail-fold {
+@keyframes download-paper-into-envelope {
   0% {
-    transform: translate3d(0, 0, 0) rotateX(0deg) rotateZ(0deg) scale(1);
+    width: var(--download-paper-width, min(100%, var(--paper-width)));
+    height: var(--download-paper-height, 620px);
+    transform: translate3d(0, 0, 0);
   }
-  12% {
-    transform: translate3d(0, -8px, 44px) rotateX(7deg) rotateZ(-0.4deg) scale(0.995);
+  18% {
+    width: var(--download-paper-stage-width, var(--download-paper-width, min(100%, var(--paper-width))));
+    height: var(--download-paper-stage-height, var(--download-paper-height, 620px));
+    transform: translate3d(var(--download-paper-stage-x, 0), var(--download-paper-stage-y, 130px), 0);
   }
-  26% {
-    transform: translate3d(0, 38px, 38px) rotateX(26deg) rotateZ(-0.22deg) scale(0.82, 0.62);
+  34% {
+    width: var(--download-paper-target-width, var(--download-paper-width, min(100%, var(--paper-width))));
+    height: var(--download-paper-target-height, var(--download-paper-height, 620px));
+    transform: translate3d(var(--download-paper-target-x, 0), var(--download-paper-target-y, 150px), 0);
   }
   42% {
-    transform: translate3d(0, 96px, 20px) rotateX(58deg) rotateZ(-0.08deg) scale(0.42, 0.22);
-  }
-  58% {
-    transform: translate3d(0, 136px, 5px) rotateX(80deg) rotateZ(0deg) scale(0.22, 0.09);
-  }
-  70% {
-    transform: translate3d(0, 146px, 0) rotateX(88deg) rotateZ(0deg) scale(0.16, 0.07);
+    width: var(--download-paper-target-width, var(--download-paper-width, min(100%, var(--paper-width))));
+    height: var(--download-paper-target-height, var(--download-paper-height, 620px));
+    transform: translate3d(var(--download-paper-target-x, 0), var(--download-paper-insert-y, 180px), 0);
   }
   100% {
-    transform: translate3d(0, 0, 0) rotateX(0deg) rotateZ(0deg) scale(1);
+    width: var(--download-paper-target-width, var(--download-paper-width, min(100%, var(--paper-width))));
+    height: var(--download-paper-target-height, var(--download-paper-height, 620px));
+    transform: translate3d(var(--download-paper-target-x, 0), var(--download-paper-insert-y, 180px), 0);
+  }
+}
+
+@keyframes download-paper-proxy-visibility {
+  0%,
+  72% {
+    opacity: 1;
+  }
+  82%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes envelope-front-pocket-receive {
+  0%,
+  18% {
+    opacity: 0;
+  }
+  32%,
+  82% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
   }
 }
 
 @keyframes envelope-receive {
   0%,
-  26% {
+  12% {
     opacity: 0;
   }
-  34%,
+  20%,
   92% {
     opacity: 1;
   }
@@ -157,10 +227,10 @@
 
 @keyframes envelope-hinge-line {
   0%,
-  26% {
+  12% {
     opacity: 0;
   }
-  34%,
+  20%,
   72% {
     opacity: 1;
   }
@@ -201,36 +271,14 @@
   }
 }
 
-@keyframes envelope-sheet-slide {
-  0% {
-    transform: translateY(-28px);
-  }
-  100% {
-    transform: translateY(22px);
-  }
-}
-
-@keyframes envelope-sheet-visibility {
-  0%,
-  26% {
-    opacity: 0;
-  }
-  38%,
-  90% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
+  .download-paper-proxy.is-active,
   .paper.is-download-folding,
   .writing-column.is-mailing .download-envelope,
+  .writing-column.is-mailing .download-envelope-front-layer,
   .writing-column.is-mailing .download-envelope-flap-open,
   .writing-column.is-mailing .download-envelope-flap-closed,
-  .writing-column.is-mailing .download-envelope-hinge,
-  .writing-column.is-mailing .download-envelope-sheet {
+  .writing-column.is-mailing .download-envelope-hinge {
     animation: none;
   }
 }

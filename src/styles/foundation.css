@@ -21,6 +21,7 @@
   --control-muted: #4d4d4d;
   --control-hover: #f2f2f2;
   --description: #333333;
+  --document-skeleton-line: rgba(0, 0, 0, 0.14);
   --envelope-body: #ffffff;
   --envelope-edge: #000000;
   --envelope-pocket: #ffffff;
@@ -34,7 +35,7 @@
   --heading: #000000;
   --ink: #000000;
   --line: #e8e8e8;
-  --mail-duration: 1700ms;
+  --mail-duration: 1450ms;
   --mail-ease: cubic-bezier(0.22, 0.72, 0.16, 1);
   --mail-insert-ease: cubic-bezier(0.2, 0.74, 0.18, 1);
   --muted: #666666;
@@ -73,6 +74,7 @@
   --control-muted: #b8b8b8;
   --control-hover: #222222;
   --description: #d0d0d0;
+  --document-skeleton-line: rgba(255, 255, 255, 0.18);
   --envelope-body: #1f1f1f;
   --envelope-edge: #4a4a4a;
   --envelope-pocket: #262626;

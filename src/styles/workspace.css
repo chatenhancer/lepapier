@@ -60,7 +60,7 @@ body.is-editor-at-top .toolbar:focus-within {
   border-radius: 2px;
   box-shadow: var(--paper-shadow);
   color: var(--paper-ink);
-  transition: box-shadow 160ms ease;
+  transition: box-shadow 160ms ease, opacity 180ms ease;
 }
 
 .paper.is-dragging {
