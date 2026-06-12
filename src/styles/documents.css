@@ -138,7 +138,9 @@
 
 .document-list {
   display: grid;
+  align-content: start;
   gap: 5px;
+  grid-auto-rows: max-content;
   height: 100%;
   overflow: auto;
   margin-right: -3px;
