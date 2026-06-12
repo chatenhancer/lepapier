@@ -1,0 +1,82 @@
+name: docs
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/docs.yml'
+      - 'astro.docs.config.mjs'
+      - 'docs/**'
+      - 'package-lock.json'
+      - 'package.json'
+      - 'scripts/check-release-editor-version.mjs'
+      - 'scripts/copy-release-editor-build.mjs'
+      - 'scripts/generate-social-card.mjs'
+      - 'scripts/validate-editor-version.mjs'
+  workflow_dispatch:
+
+jobs:
+  pages-build:
+    runs-on: ubuntu-latest
+    outputs:
+      release_matches: ${{ steps.released-editor.outputs.matches }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build docs artifact
+        run: npm run pages:build:docs
+      - name: Download latest released editor
+        id: latest-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release download --repo "$GITHUB_REPOSITORY" --pattern 'lepapier-*.zip' --dir dist/latest-release --clobber; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "No release zip found. Skipping Pages deploy until the first release tag publishes /editor."
+          fi
+      - name: Check released editor version
+        id: released-editor
+        if: steps.latest-release.outputs.available == 'true'
+        run: node scripts/check-release-editor-version.mjs dist/latest-release >> "$GITHUB_OUTPUT"
+      - name: Restore released editor
+        if: steps.released-editor.outputs.matches == 'true'
+        run: node scripts/copy-release-editor-build.mjs dist/latest-release
+      - name: Validate restored editor
+        if: steps.released-editor.outputs.matches == 'true'
+        run: node scripts/validate-editor-version.mjs dist/docs/editor/index.html
+      - name: Configure GitHub Pages
+        if: steps.released-editor.outputs.matches == 'true'
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
+      - name: Upload GitHub Pages artifact
+        if: steps.released-editor.outputs.matches == 'true'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
+        with:
+          path: dist/docs
+
+  pages-deploy:
+    needs: pages-build
+    if: needs.pages-build.outputs.release_matches == 'true'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    permissions:
+      id-token: write
+      pages: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5
