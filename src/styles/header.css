@@ -62,25 +62,25 @@
 }
 
 .brand,
-.header-actions {
+.header-actions > :not(.save-state) {
   opacity: 1;
   transition: opacity 220ms ease;
 }
 
 body.is-editor-at-top .editor-header .brand,
-body.is-editor-at-top .editor-header .header-actions {
+body.is-editor-at-top .editor-header .header-actions > :not(.save-state) {
   opacity: 0.18;
 }
 
 body.is-editor-at-top .editor-header.is-awake .brand,
-body.is-editor-at-top .editor-header.is-awake .header-actions {
+body.is-editor-at-top .editor-header.is-awake .header-actions > :not(.save-state) {
   opacity: 0.58;
 }
 
 body.is-editor-at-top .editor-header:hover .brand,
 body.is-editor-at-top .editor-header:focus-within .brand,
-body.is-editor-at-top .editor-header:hover .header-actions,
-body.is-editor-at-top .editor-header:focus-within .header-actions {
+body.is-editor-at-top .editor-header:hover .header-actions > :not(.save-state),
+body.is-editor-at-top .editor-header:focus-within .header-actions > :not(.save-state) {
   opacity: 1;
 }
 
