@@ -62,8 +62,7 @@ export function cleanAiDescription(value: string): string {
   return String(value || '')
     .replace(/^[-*\s]+/, '')
     .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 220);
+    .trim();
 }
 
 export function cleanAiTitle(value: string): string {

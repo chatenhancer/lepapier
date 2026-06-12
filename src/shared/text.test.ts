@@ -37,9 +37,12 @@ describe('text helpers', () => {
   });
 
   it('cleans markdown and AI field suggestions', () => {
+    const longDescription = `${'A generated description sentence. '.repeat(10)}Final sentence remains intact.`;
+
     expect(stripMarkdown('# Title\n![Alt](image.png)\nRead [the document](https://example.com).')).toBe('Title Read the document.');
     expect(cleanAiTitle('Document title: "A launch note"')).toBe('A launch note');
     expect(cleanAiDescription('- A compact\nsummary')).toBe('A compact summary');
+    expect(cleanAiDescription(longDescription)).toBe(longDescription.trim());
   });
 
   it('handles small string utilities', () => {
