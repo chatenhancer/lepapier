@@ -94,8 +94,14 @@ Cover images and document media are handled separately:
 - The landing/docs site is deployed at `https://lepapier.app/`; the tagged editor build is deployed at `https://lepapier.app/editor/`.
 
 ## Screenshots
-<img width="3680" height="2136" alt="image" src="https://github.com/user-attachments/assets/2c4efbb9-90f3-461b-a5fb-387d97e21a73" />
-<img width="3680" height="2136" alt="image" src="https://github.com/user-attachments/assets/b8204d5b-1a9e-4171-87e5-0ddf6d48040e" />
+
+### Dark mode
+
+<img width="1840" alt="Lepapier editor in dark mode" src="docs/public/assets/screenshots/editor-dark.png">
+
+### Light mode
+
+<img width="1840" alt="Lepapier editor in light mode" src="docs/public/assets/screenshots/editor-light.png">
 
 
 ## Development
