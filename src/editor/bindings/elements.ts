@@ -19,7 +19,6 @@ export interface EditorElements {
   documentCount: HTMLElement;
   documentList: HTMLElement;
   documentsSidebar: HTMLElement;
-  downloadAllButtons: HTMLButtonElement[];
   downloadButtons: HTMLButtonElement[];
   editorHeader: HTMLElement;
   fieldElements: EditorFieldElement[];
@@ -72,7 +71,6 @@ export function getEditorElements(): EditorElements {
     documentCount: requireElement<HTMLElement>('[data-document-count]'),
     documentList: requireElement<HTMLElement>('[data-document-list]'),
     documentsSidebar: requireElement<HTMLElement>('[data-documents-sidebar]'),
-    downloadAllButtons: queryElements<HTMLButtonElement>('[data-download-all]'),
     downloadButtons: queryElements<HTMLButtonElement>('[data-download]'),
     editorHeader: requireElement<HTMLElement>('.editor-header'),
     fieldElements: queryElements<EditorFieldElement>('[data-field]'),

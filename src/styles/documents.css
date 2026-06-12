@@ -91,7 +91,11 @@
   font-size: 9px;
   font-weight: 540;
   line-height: 1;
-  transform: translateY(2px);
+  transform: translateY(1px);
+}
+
+.document-count[hidden] {
+  display: none;
 }
 
 .documents-heading-actions {

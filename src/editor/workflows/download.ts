@@ -11,13 +11,11 @@ import type {
 import { playDownloadAnimation } from '../../ui/download-animation';
 
 export interface EditorDownloadWorkflow {
-  downloadAll(): Promise<void>;
   downloadDocument(): Promise<void>;
 }
 
 export interface EditorDownloadWorkflowOptions {
   fallbackMs: number;
-  getDocumentsForExport(): DocumentRecord[];
   getPrimaryDocumentsForExport(): DocumentRecord[];
   isRandomizeImageNamesEnabled(): boolean;
   paper: HTMLElement;
@@ -29,7 +27,6 @@ export interface EditorDownloadWorkflowOptions {
 
 export function createEditorDownloadWorkflow({
   fallbackMs,
-  getDocumentsForExport,
   getPrimaryDocumentsForExport,
   isRandomizeImageNamesEnabled,
   paper,
@@ -54,16 +51,6 @@ export function createEditorDownloadWorkflow({
   };
 
   return {
-    async downloadAll() {
-      await runDownloadAction(async () => {
-        const files = await createPortableDocumentFiles({
-          documentRecords: getDocumentsForExport(),
-          randomizeImageNames: isRandomizeImageNamesEnabled(),
-          resolveAssets
-        });
-        await downloadFiles(files, 'lepapier-documents.zip');
-      });
-    },
     async downloadDocument() {
       await runDownloadAction(async () => {
         const documentRecords = getPrimaryDocumentsForExport();

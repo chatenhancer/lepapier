@@ -21,8 +21,6 @@ export interface EditorInteractionOptions {
   deleteSelectedButton: HTMLButtonElement;
   deleteSelectedDocuments(): void;
   documentList: HTMLElement;
-  downloadAll(): void;
-  downloadAllButtons: HTMLButtonElement[];
   downloadDocument(): void;
   downloadButtons: HTMLButtonElement[];
   imagePicker: HTMLInputElement;
@@ -80,8 +78,6 @@ export function setupEditorInteractions({
   deleteSelectedButton,
   deleteSelectedDocuments,
   documentList,
-  downloadAll,
-  downloadAllButtons,
   downloadDocument,
   downloadButtons,
   imagePicker,
@@ -173,12 +169,6 @@ export function setupEditorInteractions({
   for (const button of downloadButtons) {
     button.addEventListener('click', () => {
       downloadDocument();
-    });
-  }
-
-  for (const button of downloadAllButtons) {
-    button.addEventListener('click', () => {
-      downloadAll();
     });
   }
 

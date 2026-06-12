@@ -9,7 +9,10 @@ import type {
   EditorFieldElement,
   EditorFieldName
 } from './elements';
-import { serializeAssetMetadata } from '../../images/image-library';
+import {
+  assetMatchesPath,
+  serializeAssetMetadata
+} from '../../images/image-library';
 
 export interface EditorSnapshot {
   coverImage: ImageAsset | null;
@@ -86,15 +89,27 @@ export function updateDocumentFromEditor(
     touch
   }: UpdateDocumentFromEditorOptions
 ): DocumentRecord {
-  documentRecord.coverImage = serializeAssetMetadata(coverImage);
+  const fieldsValue = readEditorFields(fields);
+  documentRecord.coverImage = getNextCoverImageMetadata(documentRecord.coverImage, coverImage, fieldsValue.image);
   documentRecord.editState = editState;
-  documentRecord.fields = readEditorFields(fields);
+  documentRecord.fields = fieldsValue;
   documentRecord.paperWidth = paperWidth;
   documentRecord.viewMode = previewActive ? 'preview' : 'write';
   if (touch) {
     documentRecord.updatedAt = Date.now();
   }
   return documentRecord;
+}
+
+function getNextCoverImageMetadata(
+  existingCoverImage: AssetMetadata | null,
+  coverImage: ImageAsset | null,
+  imageFieldValue: string
+): AssetMetadata | null {
+  const nextCoverImage = serializeAssetMetadata(coverImage);
+  if (nextCoverImage) return nextCoverImage;
+  if (existingCoverImage && assetMatchesPath(existingCoverImage, imageFieldValue)) return existingCoverImage;
+  return null;
 }
 
 export function writeEditorFields(

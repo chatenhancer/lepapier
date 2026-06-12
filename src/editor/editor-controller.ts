@@ -123,7 +123,6 @@ export function startEditorController(): void {
     documentCount,
     documentList,
     documentsSidebar,
-    downloadAllButtons,
     downloadButtons,
     editorHeader,
     fieldElements,
@@ -312,7 +311,6 @@ export function startEditorController(): void {
   });
   const downloadWorkflow = createEditorDownloadWorkflow({
     fallbackMs: downloadAnimationFallbackMs,
-    getDocumentsForExport,
     getPrimaryDocumentsForExport,
     isRandomizeImageNamesEnabled: () => randomizeImageNamesInput.checked,
     paper,
@@ -483,10 +481,6 @@ export function startEditorController(): void {
     deleteSelectedButton,
     deleteSelectedDocuments,
     documentList,
-    downloadAll() {
-      void downloadWorkflow.downloadAll();
-    },
-    downloadAllButtons,
     downloadDocument() {
       void downloadWorkflow.downloadDocument();
     },
@@ -549,8 +543,10 @@ export function startEditorController(): void {
   void restoreEditableFolders(loadedDraft);
 
   function renderDocumentsList(): void {
-    documentCount.textContent = String(session.documents.length);
-    documentCount.setAttribute('aria-label', formatDocumentCount(session.documents.length));
+    const documentTotal = session.documents.length;
+    documentCount.hidden = documentTotal <= 1;
+    documentCount.textContent = String(documentTotal);
+    documentCount.setAttribute('aria-label', formatDocumentCount(documentTotal));
     renderDocumentList({
       activeDocumentId: session.getActiveDocumentId(),
       compact: mobilePanelsQuery.matches,
@@ -967,11 +963,6 @@ export function startEditorController(): void {
   function getDocumentForExportById(documentId: string): DocumentRecord | null {
     updateActiveDocumentFromEditor({ touch: false });
     return session.documents.find((documentRecord) => documentRecord.id === documentId) || null;
-  }
-
-  function getDocumentsForExport(): DocumentRecord[] {
-    updateActiveDocumentFromEditor({ touch: false });
-    return session.documents.length ? session.documents : [getCurrentDocumentForExport()];
   }
 
   function getSelectedDocuments(): DocumentRecord[] {
