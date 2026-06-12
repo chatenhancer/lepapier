@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   formatPreviewMarkdownBlock,
+  getNextPreviewTableCellCoordinates,
   updatePreviewMarkdownBlock,
   updateMarkdownMediaBlockText
 } from './preview-text-editor';
@@ -44,6 +45,19 @@ describe('preview text editor helpers', () => {
       '| --- | ---: |',
       '| Card \\| stock | 3 |'
     ].join('\n'));
+  });
+
+  it('finds the next editable table cell in visual order', () => {
+    const cells = [
+      { rowIndex: 0, columnIndex: 0 },
+      { rowIndex: 0, columnIndex: 1 },
+      { rowIndex: 1, columnIndex: 0 },
+      { rowIndex: 1, columnIndex: 1 }
+    ];
+
+    expect(getNextPreviewTableCellCoordinates(cells, { rowIndex: 0, columnIndex: 1 }, 1)).toEqual({ rowIndex: 1, columnIndex: 0 });
+    expect(getNextPreviewTableCellCoordinates(cells, { rowIndex: 1, columnIndex: 0 }, -1)).toEqual({ rowIndex: 0, columnIndex: 1 });
+    expect(getNextPreviewTableCellCoordinates(cells, { rowIndex: 1, columnIndex: 1 }, 1)).toBeNull();
   });
 
   it('updates media block copy while preserving direction and image line', () => {

@@ -35,7 +35,7 @@ export interface PreviewTextEditorOptions {
   sync(): void;
 }
 
-type TableCoordinates = {
+export type TableCoordinates = {
   columnIndex: number;
   rowIndex: number;
 };
@@ -284,8 +284,8 @@ export function setupPreviewTextEditor({
           setActiveTableCell(element);
         });
         element.addEventListener('keydown', (event: KeyboardEvent) => {
-          if (event.key === 'Tab' && element.dataset.editing === 'true') {
-            commitPreviewMarkdownText(element);
+          if (event.key === 'Tab') {
+            handleTableCellTab(element, event);
           }
         });
       }
@@ -319,6 +319,37 @@ export function setupPreviewTextEditor({
         sync();
       });
     }
+  };
+
+  const handleTableCellTab = (element: HTMLElement, event: KeyboardEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const table = element.closest<HTMLElement>('.preview-table-scroll[data-table-index]');
+    const tableIndex = getTableIndex(table);
+    const coordinates = getTableCellCoordinates(element);
+    const nextCoordinates = table && coordinates
+      ? getNextPreviewTableCellCoordinates(getTableCellCoordinatesList(table), coordinates, event.shiftKey ? -1 : 1)
+      : null;
+
+    if (!coordinates || tableIndex === null) {
+      commitPreviewMarkdownText(element);
+      return;
+    }
+
+    commitPreviewMarkdownText(element);
+    focusTableCell(tableIndex, nextCoordinates || coordinates);
+  };
+
+  const focusTableCell = (tableIndex: number, coordinates: TableCoordinates) => {
+    const table = Array.from(preview.querySelectorAll<HTMLElement>(`.preview-table-scroll[data-table-index="${tableIndex}"]`))
+      .find((candidate) => !candidate.closest('[data-media-copy]'));
+    const cell = table?.querySelector<HTMLElement>(`[data-table-row="${coordinates.rowIndex}"][data-table-column="${coordinates.columnIndex}"]`);
+    if (!cell) return;
+
+    setActiveTableCell(cell);
+    cell.focus({ preventScroll: true });
+    selectElementText(cell);
   };
 
   return {
@@ -422,6 +453,27 @@ function getTableCellCoordinates(element: HTMLElement): TableCoordinates | null 
   };
 }
 
+function getTableCellCoordinatesList(table: HTMLElement): TableCoordinates[] {
+  return Array.from(table.querySelectorAll<HTMLElement>('[data-table-row][data-table-column]'))
+    .map(getTableCellCoordinates)
+    .filter((coordinates): coordinates is TableCoordinates => coordinates !== null)
+    .sort((a, b) => a.rowIndex - b.rowIndex || a.columnIndex - b.columnIndex);
+}
+
+export function getNextPreviewTableCellCoordinates(
+  cells: TableCoordinates[],
+  current: TableCoordinates,
+  direction: -1 | 1
+): TableCoordinates | null {
+  const currentIndex = cells.findIndex((cell) => (
+    cell.rowIndex === current.rowIndex
+    && cell.columnIndex === current.columnIndex
+  ));
+  if (currentIndex < 0) return null;
+
+  return cells[currentIndex + direction] || null;
+}
+
 function getTableIndex(table: HTMLElement | null): number | null {
   const parsed = Number(table?.dataset.tableIndex);
   return Number.isInteger(parsed) ? parsed : null;
@@ -461,6 +513,16 @@ function insertPlainTextAtSelection(text: string): void {
   range.insertNode(textNode);
   range.setStartAfter(textNode);
   range.collapse(true);
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
+function selectElementText(element: HTMLElement): void {
+  const selection = element.ownerDocument.defaultView?.getSelection();
+  if (!selection) return;
+
+  const range = element.ownerDocument.createRange();
+  range.selectNodeContents(element);
   selection.removeAllRanges();
   selection.addRange(range);
 }
