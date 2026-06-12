@@ -47,6 +47,26 @@ describe('preview text editor helpers', () => {
     ].join('\n'));
   });
 
+  it('leaves inline markdown unchanged when rendered preview text did not change', () => {
+    const markdown = 'This keeps *italic* and **bold** text plus [a link](https://example.com).';
+
+    expect(updatePreviewMarkdownBlock(
+      markdown,
+      sourceElement('P', 0, markdown.length),
+      'This keeps italic and bold text plus a link.'
+    )).toBe(markdown);
+  });
+
+  it('preserves inline markdown produced from edited preview DOM', () => {
+    const markdown = 'This keeps *italic* text.';
+
+    expect(updatePreviewMarkdownBlock(
+      markdown,
+      sourceElement('P', 0, markdown.length),
+      'This keeps *italic* text.\nNew paragraph.'
+    )).toBe('This keeps *italic* text.\n\nNew paragraph.');
+  });
+
   it('finds the next editable table cell in visual order', () => {
     const cells = [
       { rowIndex: 0, columnIndex: 0 },
@@ -87,6 +107,66 @@ describe('preview text editor helpers', () => {
       ':::',
       '',
       'Outro'
+    ].join('\n'));
+  });
+
+  it('keeps media block markdown unchanged when serialized side text is unchanged', () => {
+    const markdown = [
+      ':::media-right',
+      '',
+      '![Hero](hero.png)',
+      '',
+      '## Built for replays',
+      '',
+      '*HELP-A-FRIEND! Trivia* keeps emphasis.',
+      '',
+      ':::'
+    ].join('\n');
+
+    expect(updateMarkdownMediaBlockText(
+      markdown,
+      0,
+      [
+        '## Built for replays',
+        '',
+        '*HELP-A-FRIEND! Trivia* keeps emphasis.'
+      ].join('\n')
+    )).toBe(markdown);
+  });
+
+  it('updates media side text as multiline markdown without touching block markers', () => {
+    const markdown = [
+      ':::media-right',
+      '',
+      '![Hero](hero.png)',
+      '',
+      'Old copy',
+      '',
+      ':::'
+    ].join('\n');
+
+    expect(updateMarkdownMediaBlockText(
+      markdown,
+      0,
+      [
+        'New copy',
+        '',
+        '## Built for replays',
+        '',
+        '*HELP-A-FRIEND! Trivia* keeps emphasis.'
+      ].join('\n')
+    )).toBe([
+      ':::media-right',
+      '',
+      '![Hero](hero.png)',
+      '',
+      'New copy',
+      '',
+      '## Built for replays',
+      '',
+      '*HELP-A-FRIEND! Trivia* keeps emphasis.',
+      '',
+      ':::'
     ].join('\n'));
   });
 

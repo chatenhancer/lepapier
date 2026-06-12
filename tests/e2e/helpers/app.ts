@@ -59,6 +59,21 @@ export async function placeCursorAtEnd(locator: Locator): Promise<void> {
   });
 }
 
+export async function placeEditableCursorAtEnd(locator: Locator): Promise<void> {
+  await locator.click();
+  await locator.evaluate((element) => {
+    if (!(element instanceof HTMLElement)) return;
+
+    element.focus();
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    range.collapse(false);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  });
+}
+
 export async function paperWidth(paper: Locator): Promise<number> {
   return paper.evaluate((element) => element.getBoundingClientRect().width);
 }

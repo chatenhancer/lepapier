@@ -206,6 +206,10 @@ export function findRenderedSelectionInSource(
   };
 }
 
+export function getRenderedTextFromMarkdownSource(source: string): string {
+  return createRenderedTextSourceMap(source).text;
+}
+
 export function getLineStarts(markdown: string): number[] {
   return getMarkdownLineStarts(markdown);
 }

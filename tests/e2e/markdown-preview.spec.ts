@@ -3,6 +3,7 @@ import {
   bodyInput,
   field,
   openApp,
+  placeEditableCursorAtEnd,
   replaceEditableText,
   togglePreview
 } from './helpers/app';
@@ -159,6 +160,96 @@ test('edits preview media side text', async ({ page }) => {
 
   await replaceEditableText(page.locator('[data-media-copy]'), 'Edited side text');
   await expect(bodyInput(page)).toHaveValue(/Edited side text/);
+});
+
+test('does not flatten inline markdown or media blocks on preview focus and blur', async ({ page }) => {
+  const markdown = [
+    'This keeps *italic* and **bold** text.',
+    '',
+    ':::media-right',
+    '',
+    '![group 49](group-49.png)',
+    '',
+    '## Built for replays',
+    '',
+    '*HELP-A-FRIEND! Trivia* keeps emphasis.',
+    '',
+    ':::'
+  ].join('\n');
+
+  await bodyInput(page).fill(markdown);
+  await togglePreview(page);
+
+  await page.locator('.preview-body p').first().click();
+  await page.locator('[data-save-state]').click();
+  await page.locator('[data-media-copy]').click();
+  await page.locator('[data-save-state]').click();
+
+  await expect(bodyInput(page)).toHaveValue(markdown);
+});
+
+test('adds preview paragraph breaks without removing inline formatting', async ({ page }) => {
+  await bodyInput(page).fill('This keeps *italic* text.');
+  await togglePreview(page);
+
+  const paragraph = page.locator('.preview-body p').first();
+  await placeEditableCursorAtEnd(paragraph);
+  await paragraph.press('Enter');
+  await page.keyboard.type('New paragraph.');
+  await page.locator('[data-save-state]').click();
+
+  await expect(bodyInput(page)).toHaveValue('This keeps *italic* text.\n\nNew paragraph.');
+  await refreshPreview(page);
+  await expect(page.locator('.preview-body em')).toHaveText('italic');
+  await expect(page.locator('.preview-body p')).toContainText([
+    'This keeps italic text.',
+    'New paragraph.'
+  ]);
+});
+
+test('keeps media side text markdown stable while adding preview lines', async ({ page }) => {
+  const markdown = [
+    ':::media-right',
+    '',
+    '![group 49](group-49.png)',
+    '',
+    'The second Playground game is now available: *HELP-A-FRIEND! Trivia*.',
+    '',
+    '## Built for replays',
+    '',
+    '*HELP-A-FRIEND! Trivia* is designed for streams you want to revisit.',
+    '',
+    ':::'
+  ].join('\n');
+
+  await bodyInput(page).fill(markdown);
+  await togglePreview(page);
+
+  await page.locator('[data-media-copy]').click();
+  await page.locator('[data-save-state]').click();
+  await expect(bodyInput(page)).toHaveValue(markdown);
+
+  const firstMediaParagraph = page.locator('[data-media-copy] p').first();
+  await placeEditableCursorAtEnd(firstMediaParagraph);
+  await firstMediaParagraph.press('Enter');
+  await page.keyboard.type('Correct answers get the trophy reaction.');
+  await page.locator('[data-save-state]').click();
+
+  await expect(bodyInput(page)).toHaveValue([
+    ':::media-right',
+    '',
+    '![group 49](group-49.png)',
+    '',
+    'The second Playground game is now available: *HELP-A-FRIEND! Trivia*.',
+    '',
+    'Correct answers get the trophy reaction.',
+    '',
+    '## Built for replays',
+    '',
+    '*HELP-A-FRIEND! Trivia* is designed for streams you want to revisit.',
+    '',
+    ':::'
+  ].join('\n'));
 });
 
 test('edits preview ordered and task list items', async ({ page }) => {

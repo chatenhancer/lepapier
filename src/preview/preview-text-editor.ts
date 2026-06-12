@@ -1,8 +1,10 @@
 import {
   getMarkdownImageMatch,
+  getMarkdownMediaBlockCopyRange,
   getMediaBlockDirection,
   replaceSourceRange
 } from '../markdown/markdown-editing';
+import { getRenderedTextFromMarkdownSource } from '../markdown/markdown-renderer';
 import {
   formatMarkdownTableCellText,
   insertMarkdownTableColumn,
@@ -40,6 +42,15 @@ export type TableCoordinates = {
   rowIndex: number;
 };
 
+type EditableTextOptions = {
+  singleLine?: boolean;
+};
+
+type SerializedPreviewBlock = {
+  kind: 'block' | 'list';
+  markdown: string;
+};
+
 export function setupPreviewTextEditor({
   getBody,
   getFieldValue,
@@ -61,30 +72,52 @@ export function setupPreviewTextEditor({
     return isSmartPunctuationEnabled() ? replaceStraightSmartPunctuation(text) : text;
   };
 
-  const makePreviewTextEditable = (element: HTMLElement) => {
+  const normalizePreviewEditedMarkdown = (value: string) => {
+    return normalizePreviewEditedText(value);
+  };
+
+  const beginPreviewEdit = (element: HTMLElement) => {
+    if (element.dataset.editing === 'true') return;
+
+    recordHistory();
+    element.dataset.editing = 'true';
+  };
+
+  const makePreviewTextEditable = (element: HTMLElement, { singleLine = false }: EditableTextOptions = {}) => {
     element.contentEditable = 'true';
     element.spellcheck = true;
     element.dataset.previewEditable = 'true';
+    element.dataset.previewSingleLine = String(singleLine);
     element.setAttribute('role', 'textbox');
     element.setAttribute('aria-label', 'Edit text');
 
-    element.addEventListener('beforeinput', () => {
-      if (element.dataset.editing === 'true') return;
-      recordHistory();
-      element.dataset.editing = 'true';
-    });
-    element.addEventListener('keydown', (event: KeyboardEvent) => {
-      if (event.key !== 'Enter' || event.shiftKey) return;
-      event.preventDefault();
-      element.blur();
+    element.addEventListener('beforeinput', (event: InputEvent) => {
+      if (event.inputType === 'insertParagraph' || event.inputType === 'insertLineBreak') {
+        handlePreviewEditableLineBreak(element, event);
+        return;
+      }
+
+      beginPreviewEdit(element);
     });
     element.addEventListener('paste', (event: ClipboardEvent) => {
       const text = event.clipboardData?.getData('text/plain');
       if (!text) return;
 
       event.preventDefault();
+      beginPreviewEdit(element);
       insertPlainTextAtSelection(text);
     });
+  };
+
+  const handlePreviewEditableLineBreak = (element: HTMLElement, event: Event) => {
+    event.preventDefault();
+    if (element.dataset.previewSingleLine === 'true') {
+      element.blur();
+      return;
+    }
+
+    beginPreviewEdit(element);
+    insertPlainTextAtSelection('\n');
   };
 
   const updatePreviewFieldText = (element: HTMLElement) => {
@@ -133,7 +166,14 @@ export function setupPreviewTextEditor({
     { syncAfter = true }: { syncAfter?: boolean } = {}
   ): { body: string; changed: boolean } => {
     const body = getBody();
-    const nextText = normalizePreviewEditedText(element.innerText);
+    if (element.dataset.editing !== 'true') {
+      return {
+        body,
+        changed: false
+      };
+    }
+
+    const nextText = normalizePreviewEditedMarkdown(readPreviewEditableMarkdown(element));
     const table = element.closest<HTMLElement>('.preview-table-scroll[data-table-index]');
     const tableCoordinates = getTableCellCoordinates(element);
     const tableIndex = getTableIndex(table);
@@ -229,6 +269,15 @@ export function setupPreviewTextEditor({
     commitPreviewMarkdownText(activeTableCell);
   }, true);
 
+  preview.ownerDocument.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' || event.defaultPrevented) return;
+
+    const element = getPreviewEditableFromEvent(preview, event);
+    if (!element) return;
+
+    handlePreviewEditableLineBreak(element, event);
+  }, true);
+
   const attachPreviewTableEditing = () => {
     for (const table of preview.querySelectorAll<HTMLElement>('.preview-table-scroll[data-table-index]')) {
       if (table.closest('[data-media-copy]')) continue;
@@ -260,14 +309,14 @@ export function setupPreviewTextEditor({
 
   const attachPreviewTextEditing = () => {
     for (const element of preview.querySelectorAll<HTMLElement>('[data-preview-field]')) {
-      makePreviewTextEditable(element);
+      makePreviewTextEditable(element, { singleLine: true });
       element.addEventListener('blur', () => {
         updatePreviewFieldText(element);
       });
     }
 
     for (const element of preview.querySelectorAll<HTMLElement>('[data-preview-tags] li')) {
-      makePreviewTextEditable(element);
+      makePreviewTextEditable(element, { singleLine: true });
       element.addEventListener('blur', updatePreviewTagsText);
     }
 
@@ -275,8 +324,11 @@ export function setupPreviewTextEditor({
       if (element.closest('[data-media-copy]')) continue;
       if (element.querySelector('.preview-image-frame, .preview-video-frame')) continue;
 
-      makePreviewTextEditable(element);
-      if (element.dataset.tableRow !== undefined && element.dataset.tableColumn !== undefined) {
+      const isTableCell = element.dataset.tableRow !== undefined && element.dataset.tableColumn !== undefined;
+      makePreviewTextEditable(element, {
+        singleLine: isTableCell || isHeadingElement(element)
+      });
+      if (isTableCell) {
         element.addEventListener('focus', () => {
           setActiveTableCell(element);
         });
@@ -307,16 +359,22 @@ export function setupPreviewTextEditor({
       }, { once: true });
 
       copy.addEventListener('blur', () => {
+        if (copy.dataset.editing !== 'true') return;
+
         const updatedBody = updateMarkdownMediaBlockText(
           getBody(),
           Number(copy.dataset.mediaIndex),
-          normalizePreviewEditedText(copy.innerText)
+          normalizePreviewEditedMarkdown(readPreviewMediaCopyMarkdown(copy))
         );
-        if (updatedBody === getBody()) return;
+        if (updatedBody === getBody()) {
+          delete copy.dataset.editing;
+          return;
+        }
 
-        recordHistory();
         setFieldValue('body', updatedBody);
         sync();
+        scheduleMetadata();
+        delete copy.dataset.editing;
       });
     }
   };
@@ -394,13 +452,19 @@ export function updatePreviewMarkdownBlock(
   const sourceEnd = Number(element.dataset.sourceEnd);
   if (!Number.isInteger(sourceStart) || !Number.isInteger(sourceEnd)) return markdown;
 
+  const source = markdown.slice(sourceStart, sourceEnd);
+  if (isRenderedMarkdownTextUnchanged(source, text)) return markdown;
+
   const replacement = formatPreviewMarkdownBlock(element.tagName, text, options);
-  if (markdown.slice(sourceStart, sourceEnd) === replacement) return markdown;
+  if (source === replacement) return markdown;
   return replaceSourceRange(markdown, sourceStart, sourceEnd, () => replacement);
 }
 
 export function updateMarkdownMediaBlockText(markdown: string, mediaIndex: number, text: string): string {
   if (!Number.isInteger(mediaIndex)) return markdown;
+
+  const copyRange = getMarkdownMediaBlockCopyRange(markdown, mediaIndex);
+  if (copyRange && markdown.slice(copyRange.start, copyRange.end) === text) return markdown;
 
   const lines = markdown.split('\n');
   let currentMediaIndex = -1;
@@ -435,6 +499,188 @@ export function updateMarkdownMediaBlockText(markdown: string, mediaIndex: numbe
   }
 
   return markdown;
+}
+
+export function readPreviewEditableMarkdown(element: HTMLElement): string {
+  return normalizeSerializedPreviewMarkdown(serializePreviewInlineChildren(element));
+}
+
+export function readPreviewMediaCopyMarkdown(element: HTMLElement): string {
+  const blocks = serializePreviewBlockChildren(element);
+  if (!blocks.length) return readPreviewEditableMarkdown(element);
+
+  let markdown = '';
+  let previousKind: SerializedPreviewBlock['kind'] | null = null;
+  for (const block of blocks) {
+    if (!block.markdown) continue;
+    if (markdown) {
+      markdown += previousKind === 'list' && block.kind === 'list' ? '\n' : '\n\n';
+    }
+    markdown += block.markdown;
+    previousKind = block.kind;
+  }
+
+  return markdown;
+}
+
+function serializePreviewBlockChildren(element: Node): SerializedPreviewBlock[] {
+  const blocks: SerializedPreviewBlock[] = [];
+  let pendingInline = '';
+
+  for (const child of Array.from(element.childNodes)) {
+    const childBlocks = serializePreviewBlockNode(child);
+    if (childBlocks) {
+      flushPendingInline();
+      blocks.push(...childBlocks);
+      continue;
+    }
+
+    pendingInline += serializePreviewInlineMarkdown(child);
+  }
+
+  flushPendingInline();
+  return blocks;
+
+  function flushPendingInline(): void {
+    const markdown = formatPreviewMarkdownBlock('p', normalizeSerializedPreviewMarkdown(pendingInline));
+    if (markdown) {
+      blocks.push({
+        kind: 'block',
+        markdown
+      });
+    }
+    pendingInline = '';
+  }
+}
+
+function serializePreviewBlockNode(node: Node): SerializedPreviewBlock[] | null {
+  if (!isPreviewElementNode(node)) return null;
+
+  const tagName = node.tagName.toLowerCase();
+  if (tagName === 'br') {
+    return null;
+  }
+
+  if (tagName === 'ul' || tagName === 'ol') {
+    return Array.from(node.children)
+      .filter((child) => child.tagName.toLowerCase() === 'li')
+      .map((child, index) => serializePreviewListItem(child as HTMLElement, tagName, index))
+      .filter((block): block is SerializedPreviewBlock => block !== null);
+  }
+
+  if (tagName === 'li') {
+    const block = serializePreviewListItem(node, 'ul', 0);
+    return block ? [block] : [];
+  }
+
+  if (tagName === 'h1' || tagName === 'h2' || tagName === 'h3' || tagName === 'blockquote') {
+    const markdown = formatPreviewMarkdownBlock(tagName, readPreviewEditableMarkdown(node));
+    return markdown ? [{ kind: 'block', markdown }] : [];
+  }
+
+  if (tagName === 'p' || tagName === 'div') {
+    const nestedBlocks = serializePreviewBlockChildren(node);
+    if (nestedBlocks.length) return nestedBlocks;
+
+    const markdown = formatPreviewMarkdownBlock('p', readPreviewEditableMarkdown(node));
+    return markdown ? [{ kind: 'block', markdown }] : [];
+  }
+
+  return null;
+}
+
+function serializePreviewListItem(
+  element: HTMLElement,
+  listTagName: 'ol' | 'ul',
+  index: number
+): SerializedPreviewBlock | null {
+  const fallbackMarker = listTagName === 'ol' ? `${index + 1}. ` : '- ';
+  const markdown = formatPreviewMarkdownBlock('li', readPreviewEditableMarkdown(element), {
+    listMarker: element.dataset.listMarker || fallbackMarker
+  });
+  return markdown ? { kind: 'list', markdown } : null;
+}
+
+function serializePreviewInlineChildren(node: Node): string {
+  return Array.from(node.childNodes).map(serializePreviewInlineMarkdown).join('');
+}
+
+function serializePreviewInlineMarkdown(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) {
+    return node.textContent || '';
+  }
+  if (!isPreviewElementNode(node)) return '';
+
+  const tagName = node.tagName.toLowerCase();
+  if (tagName === 'br') return '\n';
+  if (tagName === 'button' || tagName === 'input' || tagName === 'script' || tagName === 'style') return '';
+
+  const text = serializePreviewInlineChildren(node);
+  if (tagName === 'strong' || tagName === 'b') return wrapPreviewInlineMarkdown(text, '**');
+  if (tagName === 'em' || tagName === 'i') return wrapPreviewInlineMarkdown(text, '*');
+  if (tagName === 's' || tagName === 'del' || tagName === 'strike') return wrapPreviewInlineMarkdown(text, '~~');
+  if (tagName === 'code') return text ? `\`${text.replace(/`/g, '\\`')}\`` : '';
+  if (tagName === 'a') {
+    const href = node.getAttribute('href');
+    return href && text ? `[${text}](${href})` : text;
+  }
+  if (isPreviewBlockBoundaryTag(tagName)) {
+    return text ? `\n${text}\n` : '';
+  }
+
+  return text;
+}
+
+function wrapPreviewInlineMarkdown(text: string, wrapper: string): string {
+  return text ? `${wrapper}${text}${wrapper}` : '';
+}
+
+function normalizeSerializedPreviewMarkdown(value: string): string {
+  return String(value || '')
+    .replace(/\u00a0/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function isRenderedMarkdownTextUnchanged(source: string, text: string): boolean {
+  return normalizeSerializedPreviewMarkdown(getRenderedTextFromMarkdownSource(source)) === text.trim();
+}
+
+function isHeadingElement(element: HTMLElement): boolean {
+  return /^h[1-3]$/i.test(element.tagName);
+}
+
+function isPreviewBlockBoundaryTag(tagName: string): boolean {
+  return tagName === 'blockquote'
+    || tagName === 'div'
+    || tagName === 'h1'
+    || tagName === 'h2'
+    || tagName === 'h3'
+    || tagName === 'li'
+    || tagName === 'ol'
+    || tagName === 'p'
+    || tagName === 'ul';
+}
+
+function isPreviewElementNode(node: Node): node is HTMLElement {
+  return node.nodeType === Node.ELEMENT_NODE && node instanceof HTMLElement;
+}
+
+function getPreviewEditableFromEvent(preview: HTMLElement, event: Event): HTMLElement | null {
+  const target = event.target instanceof Element
+    ? event.target.closest<HTMLElement>('[data-preview-editable="true"]')
+    : null;
+  if (target && preview.contains(target)) return target;
+
+  const selection = preview.ownerDocument.defaultView?.getSelection();
+  const anchorElement = getNodeElement(selection?.anchorNode || null);
+  const selectedEditable = anchorElement?.closest<HTMLElement>('[data-preview-editable="true"]') || null;
+  return selectedEditable && preview.contains(selectedEditable) ? selectedEditable : null;
+}
+
+function getNodeElement(node: Node | null): Element | null {
+  if (!node) return null;
+  return node instanceof Element ? node : node.parentElement;
 }
 
 function parseTableActionIndex(value: string | undefined): number | null {
@@ -507,11 +753,33 @@ function insertPlainTextAtSelection(text: string): void {
   const selection = window.getSelection();
   if (!selection || selection.rangeCount === 0) return;
 
-  selection.deleteFromDocument();
-  const textNode = document.createTextNode(text);
   const range = selection.getRangeAt(0);
-  range.insertNode(textNode);
-  range.setStartAfter(textNode);
+  const ownerDocument = range.commonAncestorContainer.ownerDocument || document;
+  const fragment = ownerDocument.createDocumentFragment();
+  const lines = text.split('\n');
+  let caretNode: Node | null = null;
+
+  lines.forEach((line, index) => {
+    if (index > 0) {
+      const lineBreak = ownerDocument.createElement('br');
+      fragment.append(lineBreak);
+      caretNode = lineBreak;
+    }
+    if (line) {
+      const textNode = ownerDocument.createTextNode(line);
+      fragment.append(textNode);
+      caretNode = textNode;
+    }
+  });
+  if (text.endsWith('\n')) {
+    fragment.append(ownerDocument.createElement('br'));
+  }
+
+  selection.deleteFromDocument();
+  range.insertNode(fragment);
+  if (caretNode) {
+    range.setStartAfter(caretNode);
+  }
   range.collapse(true);
   selection.removeAllRanges();
   selection.addRange(range);
