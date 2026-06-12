@@ -161,6 +161,28 @@ img {
   text-underline-offset: 4px;
 }
 
+.hero-github-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  text-decoration: none;
+  vertical-align: -0.12em;
+}
+
+.hero-github-link svg {
+  flex: 0 0 auto;
+  width: 0.95em;
+  height: 0.95em;
+  fill: currentColor;
+}
+
+.hero-github-link span {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
 .docs-section {
   padding: 112px 24px 128px;
   border-top: 1px solid var(--line);
