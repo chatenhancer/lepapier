@@ -8,6 +8,13 @@ import {
   escapeHtml,
   unescapeHtml
 } from './html';
+import {
+  getMarkdownLineStarts,
+  type MarkdownTable,
+  type MarkdownTableAlignment,
+  type MarkdownTableCell,
+  parseMarkdownTableAt
+} from './markdown-table';
 
 export interface MarkdownImageState {
   nextIndex: number;
@@ -20,12 +27,6 @@ export interface RenderMarkdownOptions {
 }
 
 type ListType = 'ol' | 'ul';
-type TableAlignment = '' | 'center' | 'left' | 'right';
-type TableCell = {
-  end: number;
-  text: string;
-  start: number;
-};
 
 export function renderMarkdown(markdown: string, options: RenderMarkdownOptions = {}): string {
   const sourceMap = options.sourceMap ?? true;
@@ -38,6 +39,7 @@ export function renderMarkdown(markdown: string, options: RenderMarkdownOptions 
   let inCode = false;
   let codeLines: string[] = [];
   let mediaBlockIndex = 0;
+  let tableIndex = 0;
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
@@ -82,13 +84,14 @@ export function renderMarkdown(markdown: string, options: RenderMarkdownOptions 
       continue;
     }
 
-    const table = renderTableAt(lines, lineStarts, index, {
-      ...options,
-      imageState
-    });
+    const table = parseMarkdownTableAt(lines, lineStarts, index, tableIndex);
     if (table) {
       flushList();
-      html.push(table.html);
+      html.push(renderTable(table, {
+        ...options,
+        imageState
+      }));
+      tableIndex += 1;
       index = table.endIndex;
       continue;
     }
@@ -204,13 +207,7 @@ export function findRenderedSelectionInSource(
 }
 
 export function getLineStarts(markdown: string): number[] {
-  const starts: number[] = [];
-  let offset = 0;
-  for (const line of String(markdown || '').split('\n')) {
-    starts.push(offset);
-    offset += line.length + 1;
-  }
-  return starts;
+  return getMarkdownLineStarts(markdown);
 }
 
 function renderMediaBlock(
@@ -394,103 +391,31 @@ function getSourceAttributes(enabled: boolean, start: number, end: number): stri
   return enabled ? ` data-source-start="${start}" data-source-end="${end}"` : '';
 }
 
-function renderTableAt(
-  lines: string[],
-  lineStarts: number[],
-  index: number,
-  options: RenderMarkdownOptions
-): { endIndex: number; html: string } | null {
+function renderTable(table: MarkdownTable, options: RenderMarkdownOptions): string {
   const sourceMap = options.sourceMap ?? true;
-  const headerCells = splitTableRow(lines[index], lineStarts[index] || 0);
-  const alignments = parseTableDivider(lines[index + 1]);
-  if (!headerCells || !alignments || headerCells.length !== alignments.length) return null;
-
-  const rows: TableCell[][] = [];
-  let endIndex = index + 1;
-  for (let rowIndex = index + 2; rowIndex < lines.length; rowIndex += 1) {
-    const rowCells = splitTableRow(lines[rowIndex], lineStarts[rowIndex] || 0);
-    if (!rowCells) break;
-    rows.push(normalizeTableCells(rowCells, headerCells.length));
-    endIndex = rowIndex;
-  }
-
-  const headerHtml = headerCells
-    .map((cell, cellIndex) => `<th${getTableCellAttributes(alignments[cellIndex], cell, sourceMap, 0, cellIndex)}>${renderInline(cell.text, options)}</th>`)
+  const headerHtml = table.header
+    .map((cell, cellIndex) => `<th${getTableCellAttributes(table.alignments[cellIndex], cell, sourceMap, 0, cellIndex)}>${renderInline(cell.text, options)}</th>`)
     .join('');
-  const bodyHtml = rows
-    .map((row, rowIndex) => `<tr>${row.map((cell, cellIndex) => `<td${getTableCellAttributes(alignments[cellIndex], cell, sourceMap, rowIndex + 1, cellIndex)}>${renderInline(cell.text, options)}</td>`).join('')}</tr>`)
+  const bodyHtml = table.rows
+    .map((row, rowIndex) => `<tr>${row.map((cell, cellIndex) => `<td${getTableCellAttributes(table.alignments[cellIndex], cell, sourceMap, rowIndex + 1, cellIndex)}>${renderInline(cell.text, options)}</td>`).join('')}</tr>`)
     .join('');
-  const tableStart = lineStarts[index] || 0;
-  const tableEnd = (lineStarts[endIndex] || 0) + lines[endIndex].length;
-  const tableAttributes = sourceMap ? ` data-table-start="${tableStart}" data-table-end="${tableEnd}"` : '';
+  const tableAttributes = sourceMap
+    ? ` data-table-index="${table.index}" data-table-start="${table.start}" data-table-end="${table.end}"`
+    : '';
 
-  return {
-    endIndex,
-    html: [
-      `<div class="preview-table-scroll"${tableAttributes}>`,
-      '<table>',
-      `<thead><tr>${headerHtml}</tr></thead>`,
-      bodyHtml ? `<tbody>${bodyHtml}</tbody>` : '',
-      '</table>',
-      '</div>'
-    ].join('')
-  };
-}
-
-function splitTableRow(line: string | undefined, lineStart = 0): TableCell[] | null {
-  if (!line || !line.includes('|')) return null;
-
-  const trimmedStart = line.search(/\S/);
-  if (trimmedStart < 0) return null;
-
-  let contentStart = trimmedStart;
-  let contentEnd = line.length - (/\s*$/.exec(line)?.[0].length || 0);
-  if (line[contentStart] === '|') contentStart += 1;
-  if (line[contentEnd - 1] === '|') contentEnd -= 1;
-
-  const cells: TableCell[] = [];
-  let cellStart = contentStart;
-  for (let cursor = contentStart; cursor <= contentEnd; cursor += 1) {
-    if (cursor < contentEnd && (line[cursor] !== '|' || line[cursor - 1] === '\\')) continue;
-
-    cells.push(createTableCell(line, lineStart, cellStart, cursor));
-    cellStart = cursor + 1;
-  }
-  return cells.length > 1 ? cells : null;
-}
-
-function parseTableDivider(line: string | undefined): TableAlignment[] | null {
-  const cells = splitTableRow(line);
-  if (!cells) return null;
-
-  const alignments: TableAlignment[] = [];
-  for (const cell of cells) {
-    const value = cell.text.replace(/\s+/g, '');
-    if (!/^:?-{3,}:?$/.test(value)) return null;
-
-    const alignsLeft = value.startsWith(':');
-    const alignsRight = value.endsWith(':');
-    if (alignsLeft && alignsRight) {
-      alignments.push('center');
-    } else if (alignsRight) {
-      alignments.push('right');
-    } else if (alignsLeft) {
-      alignments.push('left');
-    } else {
-      alignments.push('');
-    }
-  }
-
-  return alignments;
-}
-
-function normalizeTableCells(cells: TableCell[], length: number): TableCell[] {
-  return Array.from({ length }, (_value, index) => cells[index] || createEmptyTableCell(cells[cells.length - 1]));
+  return [
+    `<div class="preview-table-scroll"${tableAttributes}>`,
+    '<table>',
+    `<thead><tr>${headerHtml}</tr></thead>`,
+    bodyHtml ? `<tbody>${bodyHtml}</tbody>` : '',
+    '</table>',
+    '</div>'
+  ].join('');
 }
 
 function getTableCellAttributes(
-  alignment: TableAlignment,
-  cell: TableCell,
+  alignment: MarkdownTableAlignment,
+  cell: MarkdownTableCell,
   sourceMap: boolean,
   rowIndex: number,
   columnIndex: number
@@ -500,28 +425,6 @@ function getTableCellAttributes(
     alignment ? ` data-align="${alignment}"` : '',
     getSourceAttributes(sourceMap, cell.start, cell.end)
   ].join('');
-}
-
-function createTableCell(line: string, lineStart: number, start: number, end: number): TableCell {
-  const raw = line.slice(start, end);
-  const leadingWhitespace = raw.search(/\S/);
-  const contentStart = leadingWhitespace < 0 ? start : start + leadingWhitespace;
-  const trailingWhitespace = /\s*$/.exec(raw)?.[0].length || 0;
-  const contentEnd = Math.max(contentStart, end - trailingWhitespace);
-  return {
-    end: lineStart + contentEnd,
-    start: lineStart + contentStart,
-    text: line.slice(contentStart, contentEnd).replace(/\\\|/g, '|')
-  };
-}
-
-function createEmptyTableCell(previousCell: TableCell | undefined): TableCell {
-  const offset = previousCell?.end || 0;
-  return {
-    end: offset,
-    start: offset,
-    text: ''
-  };
 }
 
 function isHorizontalRule(line: string): boolean {

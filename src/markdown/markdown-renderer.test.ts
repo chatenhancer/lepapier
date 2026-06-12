@@ -36,7 +36,7 @@ describe('renderMarkdown', () => {
     expect(html).toContain('<input type="checkbox" checked disabled aria-label="Completed task">');
     expect(html).toContain('<input type="checkbox" disabled aria-label="Open task">');
     expect(html).toContain('<hr>');
-    expect(html).toContain('<div class="preview-table-scroll" data-table-start="48" data-table-end="94"><table>');
+    expect(html).toContain('<div class="preview-table-scroll" data-table-index="0" data-table-start="48" data-table-end="94"><table>');
     expect(html).toContain('<th data-table-row="0" data-table-column="0" data-align="left" data-source-start="50" data-source-end="54">Name</th>');
     expect(html).toContain('<th data-table-row="0" data-table-column="1" data-align="right" data-source-start="57" data-source-end="62">Count</th>');
     expect(html).toContain('<td data-table-row="1" data-table-column="0" data-align="left" data-source-start="83" data-source-end="88">Paper</td>');

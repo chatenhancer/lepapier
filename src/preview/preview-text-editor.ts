@@ -3,6 +3,12 @@ import {
   getMediaBlockDirection,
   replaceSourceRange
 } from '../markdown/markdown-editing';
+import {
+  formatMarkdownTableCellText,
+  insertMarkdownTableColumn,
+  insertMarkdownTableRow,
+  updateMarkdownTableCell
+} from '../markdown/markdown-table';
 import { replaceStraightSmartPunctuation } from '../markdown/smart-punctuation';
 import type { DocumentFields } from '../shared/types';
 import { slugify } from '../shared/text';
@@ -30,8 +36,8 @@ export interface PreviewTextEditorOptions {
 }
 
 type TableCoordinates = {
-  columnIndex: number | null;
-  rowIndex: number | null;
+  columnIndex: number;
+  rowIndex: number;
 };
 
 export function setupPreviewTextEditor({
@@ -125,22 +131,15 @@ export function setupPreviewTextEditor({
   const commitPreviewMarkdownText = (
     element: HTMLElement,
     { syncAfter = true }: { syncAfter?: boolean } = {}
-  ): { body: string; changed: boolean; diff: number } => {
-    const sourceStart = Number(element.dataset.sourceStart);
-    const sourceEnd = Number(element.dataset.sourceEnd);
+  ): { body: string; changed: boolean } => {
     const body = getBody();
-    if (!Number.isInteger(sourceStart) || !Number.isInteger(sourceEnd)) {
-      return { body, changed: false, diff: 0 };
-    }
-
     const nextText = normalizePreviewEditedText(element.innerText);
-    const table = element.closest<HTMLElement>('.preview-table-scroll[data-table-start][data-table-end]');
+    const table = element.closest<HTMLElement>('.preview-table-scroll[data-table-index]');
     const tableCoordinates = getTableCellCoordinates(element);
-    const tableStart = Number(table?.dataset.tableStart);
-    const tableEnd = Number(table?.dataset.tableEnd);
-    const updatedBody = table && tableCoordinates && Number.isInteger(tableStart) && Number.isInteger(tableEnd)
-      ? updatePreviewTableCell(body, tableStart, tableEnd, tableCoordinates.rowIndex, tableCoordinates.columnIndex, element.tagName, nextText)
-      : updatePreviewMarkdownBlock(body, sourceStart, sourceEnd, element.tagName, nextText, {
+    const tableIndex = getTableIndex(table);
+    const updatedBody = tableCoordinates && tableIndex !== null
+      ? updateMarkdownTableCell(body, tableIndex, tableCoordinates.rowIndex, tableCoordinates.columnIndex, nextText)
+      : updatePreviewMarkdownBlock(body, element, nextText, {
           listMarker: element.dataset.listMarker
         });
     if (updatedBody !== body) {
@@ -154,8 +153,7 @@ export function setupPreviewTextEditor({
     delete element.dataset.editing;
     return {
       body: updatedBody,
-      changed: updatedBody !== body,
-      diff: updatedBody.length - body.length
+      changed: updatedBody !== body
     };
   };
 
@@ -192,9 +190,8 @@ export function setupPreviewTextEditor({
   };
 
   const updatePreviewTable = (table: HTMLElement, action: 'column' | 'row') => {
-    let tableStart = Number(table.dataset.tableStart);
-    let tableEnd = Number(table.dataset.tableEnd);
-    if (!Number.isInteger(tableStart) || !Number.isInteger(tableEnd)) return;
+    const tableIndex = getTableIndex(table);
+    if (tableIndex === null) return;
 
     recordHistory();
 
@@ -204,12 +201,11 @@ export function setupPreviewTextEditor({
     if (cell?.dataset.editing === 'true') {
       const commit = commitPreviewMarkdownText(cell, { syncAfter: false });
       body = commit.body;
-      tableEnd += commit.diff;
     }
 
     const updatedBody = action === 'row'
-      ? insertPreviewTableRow(body, tableStart, tableEnd, coordinates?.rowIndex ?? null)
-      : insertPreviewTableColumn(body, tableStart, tableEnd, coordinates?.columnIndex ?? null);
+      ? insertMarkdownTableRow(body, tableIndex, coordinates?.rowIndex ?? null)
+      : insertMarkdownTableColumn(body, tableIndex, coordinates?.columnIndex ?? null);
 
     if (updatedBody === body) return;
 
@@ -218,8 +214,25 @@ export function setupPreviewTextEditor({
     scheduleMetadata();
   };
 
+  preview.ownerDocument.addEventListener('pointerdown', (event) => {
+    if (!activeTableCell || activeTableCell.dataset.editing !== 'true') return;
+
+    const target = event.target;
+    const targetElement = target instanceof Element ? target : null;
+    if (
+      (target instanceof Node && activeTableCell.contains(target))
+      || targetElement?.closest('.preview-table-controls')
+    ) {
+      return;
+    }
+
+    commitPreviewMarkdownText(activeTableCell);
+  }, true);
+
   const attachPreviewTableEditing = () => {
-    for (const table of preview.querySelectorAll<HTMLElement>('.preview-table-scroll[data-table-start][data-table-end]')) {
+    for (const table of preview.querySelectorAll<HTMLElement>('.preview-table-scroll[data-table-index]')) {
+      if (table.closest('[data-media-copy]')) continue;
+
       const controls = table.ownerDocument.createElement('div');
       const rowButton = table.ownerDocument.createElement('button');
       const columnButton = table.ownerDocument.createElement('button');
@@ -270,10 +283,17 @@ export function setupPreviewTextEditor({
         element.addEventListener('pointerdown', () => {
           setActiveTableCell(element);
         });
+        element.addEventListener('keydown', (event: KeyboardEvent) => {
+          if (event.key === 'Tab' && element.dataset.editing === 'true') {
+            commitPreviewMarkdownText(element);
+          }
+        });
       }
-      element.addEventListener('blur', () => {
+      const commitElement = () => {
         updatePreviewMarkdownText(element);
-      });
+      };
+      element.addEventListener('blur', commitElement);
+      element.addEventListener('focusout', commitElement);
     }
   };
 
@@ -328,92 +348,24 @@ export function formatPreviewMarkdownBlock(
     return text.split('\n').filter(Boolean).map((line) => `> ${line}`).join('\n');
   }
   if (normalizedTagName === 'td' || normalizedTagName === 'th') {
-    return text.replace(/\s+/g, ' ').trim().replace(/\|/g, '\\|');
+    return formatMarkdownTableCellText(text);
   }
   return text.split('\n').filter(Boolean).join('\n\n');
 }
 
 export function updatePreviewMarkdownBlock(
   markdown: string,
-  sourceStart: number,
-  sourceEnd: number,
-  tagName: string,
+  element: HTMLElement | { dataset: { listMarker?: string; sourceEnd?: string; sourceStart?: string }; tagName: string },
   text: string,
   options?: { listMarker?: string }
 ): string {
-  const replacement = formatPreviewMarkdownBlock(tagName, text, options);
+  const sourceStart = Number(element.dataset.sourceStart);
+  const sourceEnd = Number(element.dataset.sourceEnd);
+  if (!Number.isInteger(sourceStart) || !Number.isInteger(sourceEnd)) return markdown;
+
+  const replacement = formatPreviewMarkdownBlock(element.tagName, text, options);
   if (markdown.slice(sourceStart, sourceEnd) === replacement) return markdown;
   return replaceSourceRange(markdown, sourceStart, sourceEnd, () => replacement);
-}
-
-export function updatePreviewTableCell(
-  markdown: string,
-  tableStart: number,
-  tableEnd: number,
-  rowIndex: number | null,
-  columnIndex: number | null,
-  tagName: string,
-  text: string
-): string {
-  if (rowIndex === null || columnIndex === null) return markdown;
-
-  const table = parsePreviewTable(markdown, tableStart, tableEnd);
-  const markdownRowIndex = renderedTableRowIndexToMarkdownRowIndex(rowIndex);
-  if (
-    !table
-    || markdownRowIndex < 0
-    || columnIndex < 0
-    || markdownRowIndex >= table.rows.length
-    || columnIndex >= table.columnCount
-  ) {
-    return markdown;
-  }
-
-  const rows = table.rows.map((row) => normalizePreviewTableCells(row, table.columnCount));
-  rows[markdownRowIndex] = [...rows[markdownRowIndex]];
-  rows[markdownRowIndex][columnIndex] = formatPreviewMarkdownBlock(tagName, text);
-
-  return replaceSourceRange(markdown, tableStart, tableEnd, () => formatPreviewTableRows(rows));
-}
-
-export function insertPreviewTableRow(
-  markdown: string,
-  tableStart: number,
-  tableEnd: number,
-  afterRowIndex: number | null = null
-): string {
-  const table = parsePreviewTable(markdown, tableStart, tableEnd);
-  if (!table) return markdown;
-
-  const row = Array.from({ length: table.columnCount }, () => '');
-  const insertIndex = Number.isInteger(afterRowIndex)
-    ? Math.min(table.rows.length, Math.max(2, Number(afterRowIndex) + 2))
-    : table.rows.length;
-  const rows = [...table.rows];
-  rows.splice(insertIndex, 0, row);
-
-  return replaceSourceRange(markdown, tableStart, tableEnd, () => formatPreviewTableRows(rows));
-}
-
-export function insertPreviewTableColumn(
-  markdown: string,
-  tableStart: number,
-  tableEnd: number,
-  afterColumnIndex: number | null = null
-): string {
-  const table = parsePreviewTable(markdown, tableStart, tableEnd);
-  if (!table) return markdown;
-
-  const insertIndex = Number.isInteger(afterColumnIndex)
-    ? clamp(Number(afterColumnIndex) + 1, 0, table.columnCount)
-    : table.columnCount;
-  const rows = table.rows.map((row, rowIndex) => {
-    const cells = [...normalizePreviewTableCells(row, table.columnCount)];
-    cells.splice(insertIndex, 0, rowIndex === 0 ? 'Column' : rowIndex === 1 ? '---' : '');
-    return cells;
-  });
-
-  return replaceSourceRange(markdown, tableStart, tableEnd, () => formatPreviewTableRows(rows));
 }
 
 export function updateMarkdownMediaBlockText(markdown: string, mediaIndex: number, text: string): string {
@@ -459,10 +411,6 @@ function parseTableActionIndex(value: string | undefined): number | null {
   return Number.isInteger(parsed) ? parsed : null;
 }
 
-function renderedTableRowIndexToMarkdownRowIndex(rowIndex: number): number {
-  return rowIndex <= 0 ? 0 : rowIndex + 1;
-}
-
 function getTableCellCoordinates(element: HTMLElement): TableCoordinates | null {
   const rowIndex = parseTableActionIndex(element.dataset.tableRow);
   const columnIndex = parseTableActionIndex(element.dataset.tableColumn);
@@ -472,6 +420,11 @@ function getTableCellCoordinates(element: HTMLElement): TableCoordinates | null 
     columnIndex,
     rowIndex
   };
+}
+
+function getTableIndex(table: HTMLElement | null): number | null {
+  const parsed = Number(table?.dataset.tableIndex);
+  return Number.isInteger(parsed) ? parsed : null;
 }
 
 function wireTableActionButton(button: HTMLButtonElement, action: () => void): void {
@@ -496,70 +449,6 @@ function wireTableActionButton(button: HTMLButtonElement, action: () => void): v
 
     action();
   });
-}
-
-function parsePreviewTable(markdown: string, tableStart: number, tableEnd: number): { columnCount: number; rows: string[][] } | null {
-  if (!Number.isInteger(tableStart) || !Number.isInteger(tableEnd) || tableStart < 0 || tableEnd <= tableStart) {
-    return null;
-  }
-
-  const rows = markdown
-    .slice(tableStart, tableEnd)
-    .split('\n')
-    .map(splitPreviewTableRow);
-
-  if (rows.length < 2 || rows.some((row) => !row)) return null;
-
-  const divider = rows[1];
-  if (!divider?.every((cell) => /^:?-{3,}:?$/.test(cell.replace(/\s+/g, '')))) return null;
-
-  const columnCount = Math.max(...rows.map((row) => row?.length || 0));
-  if (columnCount < 2) return null;
-
-  return {
-    columnCount,
-    rows: rows.map((row) => normalizePreviewTableCells(row || [], columnCount))
-  };
-}
-
-function splitPreviewTableRow(line: string): string[] | null {
-  if (!line.includes('|')) return null;
-
-  let source = line.trim();
-  if (source.startsWith('|')) source = source.slice(1);
-  if (source.endsWith('|')) source = source.slice(0, -1);
-
-  const cells: string[] = [];
-  let cell = '';
-  for (let index = 0; index < source.length; index += 1) {
-    const character = source[index];
-    if (character === '|' && source[index - 1] !== '\\') {
-      cells.push(cell.trim());
-      cell = '';
-      continue;
-    }
-
-    cell += character;
-  }
-  cells.push(cell.trim());
-
-  return cells.length > 1 ? cells : null;
-}
-
-function normalizePreviewTableCells(cells: string[], length: number): string[] {
-  return Array.from({ length }, (_value, index) => cells[index] || '');
-}
-
-function formatPreviewTableRows(rows: string[][]): string {
-  return rows.map(formatPreviewTableRow).join('\n');
-}
-
-function formatPreviewTableRow(cells: string[]): string {
-  return `| ${cells.map((cell) => cell.trim()).join(' | ')} |`;
-}
-
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.min(maximum, Math.max(minimum, value));
 }
 
 function insertPlainTextAtSelection(text: string): void {

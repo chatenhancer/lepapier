@@ -2,9 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import {
   formatPreviewMarkdownBlock,
-  insertPreviewTableColumn,
-  insertPreviewTableRow,
-  updatePreviewTableCell,
   updatePreviewMarkdownBlock,
   updateMarkdownMediaBlockText
 } from './preview-text-editor';
@@ -25,106 +22,27 @@ describe('preview text editor helpers', () => {
     const start = markdown.indexOf('Delete me');
     const end = start + 'Delete me'.length;
 
-    expect(updatePreviewMarkdownBlock(markdown, start, end, 'P', '')).toBe(['Intro', '', '', '', 'Outro'].join('\n'));
+    expect(updatePreviewMarkdownBlock(markdown, sourceElement('P', start, end), '')).toBe(['Intro', '', '', '', 'Outro'].join('\n'));
   });
 
   it('saves an emptied preview heading back to markdown', () => {
     const markdown = ['# Old', '', 'Next'].join('\n');
 
-    expect(updatePreviewMarkdownBlock(markdown, 0, '# Old'.length, 'H1', '')).toBe(['', '', 'Next'].join('\n'));
+    expect(updatePreviewMarkdownBlock(markdown, sourceElement('H1', 0, '# Old'.length), '')).toBe(['', '', 'Next'].join('\n'));
   });
 
   it('saves edited ordered and task list items with their original markers', () => {
-    expect(updatePreviewMarkdownBlock('2. Old', 0, '2. Old'.length, 'LI', 'New', { listMarker: '2. ' })).toBe('2. New');
-    expect(updatePreviewMarkdownBlock('- [ ] Old', 0, '- [ ] Old'.length, 'LI', 'New', { listMarker: '- [ ] ' })).toBe('- [ ] New');
+    expect(updatePreviewMarkdownBlock('2. Old', sourceElement('LI', 0, '2. Old'.length), 'New', { listMarker: '2. ' })).toBe('2. New');
+    expect(updatePreviewMarkdownBlock('- [ ] Old', sourceElement('LI', 0, '- [ ] Old'.length), 'New', { listMarker: '- [ ] ' })).toBe('- [ ] New');
   });
 
-  it('saves edited table cells back into the markdown row', () => {
+  it('saves edited table-cell text as escaped Markdown text', () => {
     const markdown = ['| Name | Count |', '| --- | ---: |', '| Paper | 3 |'].join('\n');
 
-    expect(updatePreviewMarkdownBlock(markdown, markdown.indexOf('Paper'), markdown.indexOf('Paper') + 'Paper'.length, 'TD', 'Card')).toBe([
+    expect(updatePreviewMarkdownBlock(markdown, sourceElement('TD', markdown.indexOf('Paper'), markdown.indexOf('Paper') + 'Paper'.length), 'Card | stock')).toBe([
       '| Name | Count |',
       '| --- | ---: |',
-      '| Card | 3 |'
-    ].join('\n'));
-  });
-
-  it('saves edited table cells by replacing the parsed table block', () => {
-    const markdown = ['Intro', '', '| Name | Count |', '| --- | ---: |', '| Paper | 3 |', '', 'Outro'].join('\n');
-    const tableStart = markdown.indexOf('| Name');
-    const tableEnd = markdown.indexOf('\n\nOutro');
-
-    expect(updatePreviewTableCell(markdown, tableStart, tableEnd, 1, 0, 'TD', 'Card | stock')).toBe([
-      'Intro',
-      '',
-      '| Name | Count |',
-      '| --- | ---: |',
-      '| Card \\| stock | 3 |',
-      '',
-      'Outro'
-    ].join('\n'));
-  });
-
-  it('adds a preview table row after the active row', () => {
-    const markdown = [
-      'Intro',
-      '',
-      '| Name | Count |',
-      '| --- | ---: |',
-      '| Paper | 3 |',
-      '| Pen | 8 |',
-      '',
-      'Outro'
-    ].join('\n');
-    const tableStart = markdown.indexOf('| Name');
-    const tableEnd = markdown.indexOf('\n\nOutro');
-
-    expect(insertPreviewTableRow(markdown, tableStart, tableEnd, 1)).toBe([
-      'Intro',
-      '',
-      '| Name | Count |',
-      '| --- | ---: |',
-      '| Paper | 3 |',
-      '|  |  |',
-      '| Pen | 8 |',
-      '',
-      'Outro'
-    ].join('\n'));
-  });
-
-  it('adds a preview table column after the active column', () => {
-    const markdown = ['| Name | Count |', '| --- | ---: |', '| Paper | 3 |'].join('\n');
-
-    expect(insertPreviewTableColumn(markdown, 0, markdown.length, 0)).toBe([
-      '| Name | Column | Count |',
-      '| --- | --- | ---: |',
-      '| Paper |  | 3 |'
-    ].join('\n'));
-  });
-
-  it('adds a row after committing a pending table cell edit', () => {
-    const markdown = ['| Name | Count |', '| --- | ---: |', '| Paper | 3 |', '| Pen | 8 |'].join('\n');
-    const edited = updatePreviewTableCell(markdown, 0, markdown.length, 1, 0, 'TD', 'Notebook');
-    const adjustedEnd = markdown.length + (edited.length - markdown.length);
-
-    expect(insertPreviewTableRow(edited, 0, adjustedEnd, 1)).toBe([
-      '| Name | Count |',
-      '| --- | ---: |',
-      '| Notebook | 3 |',
-      '|  |  |',
-      '| Pen | 8 |'
-    ].join('\n'));
-  });
-
-  it('adds a column after committing a pending table cell edit', () => {
-    const markdown = ['| Name | Count |', '| --- | ---: |', '| Paper | 3 |'].join('\n');
-    const edited = updatePreviewTableCell(markdown, 0, markdown.length, 1, 1, 'TD', '12');
-    const adjustedEnd = markdown.length + (edited.length - markdown.length);
-
-    expect(insertPreviewTableColumn(edited, 0, adjustedEnd, 1)).toBe([
-      '| Name | Count | Column |',
-      '| --- | ---: | --- |',
-      '| Paper | 12 |  |'
+      '| Card \\| stock | 3 |'
     ].join('\n'));
   });
 
@@ -164,3 +82,17 @@ describe('preview text editor helpers', () => {
     expect(updateMarkdownMediaBlockText(markdown, 2, 'Copy')).toBe(markdown);
   });
 });
+
+function sourceElement(
+  tagName: string,
+  sourceStart: number,
+  sourceEnd: number
+): { dataset: { sourceEnd: string; sourceStart: string }; tagName: string } {
+  return {
+    dataset: {
+      sourceEnd: String(sourceEnd),
+      sourceStart: String(sourceStart)
+    },
+    tagName
+  };
+}
