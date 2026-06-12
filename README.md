@@ -26,7 +26,11 @@ It builds into a single `index.html` file that can be placed and opened anywhere
 
 It was mainly developed to cleanly create, edit, and export Markdown archives for static *Astro* sites and blogs, but it can be used to edit any form of Markdown content.
 
-## Features
+**Please note that the app is unfinished**. For now it only has the features I need to publish content on blogs like https://chatenhancer.com, which are _Astro_ sites. 
+
+Feature set and robustness will improve in the future as I go along.
+
+## Features (unfinished)
 
 - Local-first editing with drafts saved in the browser.
 - Multi-document workspace with document selection, bulk download, and bulk delete.
