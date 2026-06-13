@@ -20,6 +20,7 @@ type WritableFieldName = Extract<keyof DocumentFields, 'body' | 'description' | 
 
 export interface PreviewTextEditor {
   attach(): void;
+  commitActiveEdit(options?: { syncAfter?: boolean }): boolean;
 }
 
 export interface PreviewTextEditorOptions {
@@ -120,12 +121,16 @@ export function setupPreviewTextEditor({
     insertPlainTextAtSelection('\n');
   };
 
-  const updatePreviewFieldText = (element: HTMLElement) => {
+  const updatePreviewFieldText = (
+    element: HTMLElement,
+    { syncAfter = true }: { syncAfter?: boolean } = {}
+  ): boolean => {
     const fieldName = element.dataset.previewField;
-    if (fieldName !== 'title' && fieldName !== 'description') return;
+    if (fieldName !== 'title' && fieldName !== 'description') return false;
     const editorFieldName = fieldName as PreviewTextFieldName;
 
     const nextText = normalizePreviewEditedText(element.innerText);
+    let changed = false;
     if (getFieldValue(editorFieldName) !== nextText) {
       setFieldValue(editorFieldName, nextText);
       if (editorFieldName === 'title') {
@@ -136,29 +141,41 @@ export function setupPreviewTextEditor({
       } else {
         markDescriptionEdited();
       }
+      changed = true;
+    }
+
+    delete element.dataset.editing;
+    if (changed && syncAfter) {
       sync();
       scheduleMetadata();
     }
 
-    delete element.dataset.editing;
+    return changed;
   };
 
-  const updatePreviewTagsText = () => {
+  const updatePreviewTagsText = ({ syncAfter = true }: { syncAfter?: boolean } = {}): boolean => {
     const tagElements = Array.from(preview.querySelectorAll<HTMLElement>('[data-preview-tags] li'));
     const nextTags = tagElements
       .map((element) => normalizePreviewEditedText(element.innerText))
       .filter(Boolean)
       .join(', ');
+    let changed = false;
     if (getFieldValue('tags') !== nextTags) {
       setFieldValue('tags', nextTags);
       markTagsEdited();
-      sync();
-      scheduleMetadata();
+      changed = true;
     }
 
     for (const element of tagElements) {
       delete element.dataset.editing;
     }
+
+    if (changed && syncAfter) {
+      sync();
+      scheduleMetadata();
+    }
+
+    return changed;
   };
 
   const commitPreviewMarkdownText = (
@@ -182,23 +199,90 @@ export function setupPreviewTextEditor({
       : updatePreviewMarkdownBlock(body, element, nextText, {
           listMarker: element.dataset.listMarker
         });
-    if (updatedBody !== body) {
+    const changed = updatedBody !== body;
+    if (changed) {
       setFieldValue('body', updatedBody);
-      if (syncAfter) {
-        sync();
-        scheduleMetadata();
-      }
     }
 
     delete element.dataset.editing;
+    if (changed && syncAfter) {
+      sync();
+      scheduleMetadata();
+    }
+
     return {
       body: updatedBody,
-      changed: updatedBody !== body
+      changed
     };
   };
 
   const updatePreviewMarkdownText = (element: HTMLElement) => {
     commitPreviewMarkdownText(element);
+  };
+
+  const commitPreviewMediaCopyText = (
+    copy: HTMLElement,
+    { syncAfter = true }: { syncAfter?: boolean } = {}
+  ): boolean => {
+    if (copy.dataset.editing !== 'true') return false;
+
+    const body = getBody();
+    const updatedBody = updateMarkdownMediaBlockText(
+      body,
+      Number(copy.dataset.mediaIndex),
+      normalizePreviewEditedMarkdown(readPreviewMediaCopyMarkdown(copy))
+    );
+    const changed = updatedBody !== body;
+    if (changed) {
+      setFieldValue('body', updatedBody);
+    }
+
+    delete copy.dataset.editing;
+    if (changed && syncAfter) {
+      sync();
+      scheduleMetadata();
+    }
+
+    return changed;
+  };
+
+  const commitPreviewEditableText = (
+    element: HTMLElement,
+    { syncAfter = true }: { syncAfter?: boolean } = {}
+  ): boolean => {
+    if (!preview.contains(element)) return false;
+
+    if (element.dataset.previewField) {
+      return updatePreviewFieldText(element, { syncAfter });
+    }
+
+    if (element.closest('[data-preview-tags]')) {
+      return updatePreviewTagsText({ syncAfter });
+    }
+
+    const mediaCopy = element.closest<HTMLElement>('[data-media-copy]');
+    if (mediaCopy) {
+      return commitPreviewMediaCopyText(mediaCopy, { syncAfter });
+    }
+
+    if (element.dataset.sourceStart !== undefined && element.dataset.sourceEnd !== undefined) {
+      return commitPreviewMarkdownText(element, { syncAfter }).changed;
+    }
+
+    return false;
+  };
+
+  const getActivePreviewEditable = (): HTMLElement | null => {
+    const activeElement = preview.ownerDocument.activeElement;
+    const activeEditable = activeElement instanceof Element
+      ? activeElement.closest<HTMLElement>('[data-preview-editable="true"]')
+      : null;
+    if (activeEditable && preview.contains(activeEditable)) return activeEditable;
+
+    const selection = preview.ownerDocument.defaultView?.getSelection();
+    const anchorElement = getNodeElement(selection?.anchorNode || null);
+    const selectedEditable = anchorElement?.closest<HTMLElement>('[data-preview-editable="true"]') || null;
+    return selectedEditable && preview.contains(selectedEditable) ? selectedEditable : null;
   };
 
   const setActiveTableCell = (element: HTMLElement) => {
@@ -317,7 +401,9 @@ export function setupPreviewTextEditor({
 
     for (const element of preview.querySelectorAll<HTMLElement>('[data-preview-tags] li')) {
       makePreviewTextEditable(element, { singleLine: true });
-      element.addEventListener('blur', updatePreviewTagsText);
+      element.addEventListener('blur', () => {
+        updatePreviewTagsText();
+      });
     }
 
     for (const element of preview.querySelectorAll<HTMLElement>('.preview-body [data-source-start][data-source-end]')) {
@@ -359,22 +445,7 @@ export function setupPreviewTextEditor({
       }, { once: true });
 
       copy.addEventListener('blur', () => {
-        if (copy.dataset.editing !== 'true') return;
-
-        const updatedBody = updateMarkdownMediaBlockText(
-          getBody(),
-          Number(copy.dataset.mediaIndex),
-          normalizePreviewEditedMarkdown(readPreviewMediaCopyMarkdown(copy))
-        );
-        if (updatedBody === getBody()) {
-          delete copy.dataset.editing;
-          return;
-        }
-
-        setFieldValue('body', updatedBody);
-        sync();
-        scheduleMetadata();
-        delete copy.dataset.editing;
+        commitPreviewMediaCopyText(copy);
       });
     }
   };
@@ -415,6 +486,10 @@ export function setupPreviewTextEditor({
       attachPreviewTextEditing();
       attachMediaTextEditing();
       attachPreviewTableEditing();
+    },
+    commitActiveEdit({ syncAfter = true }: { syncAfter?: boolean } = {}) {
+      const element = getActivePreviewEditable();
+      return element ? commitPreviewEditableText(element, { syncAfter }) : false;
     }
   };
 }

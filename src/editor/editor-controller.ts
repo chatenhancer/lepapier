@@ -783,6 +783,7 @@ export function startEditorController(): void {
     const documentRecord = getActiveDocument();
     if (!documentRecord) return null;
 
+    commitActivePreviewTextEdit();
     return updateDocumentFromEditorState(documentRecord, {
       coverImage: session.getCoverImage(),
       editState: session.getEditState(),
@@ -791,6 +792,11 @@ export function startEditorController(): void {
       previewActive: session.isPreviewActive(),
       touch
     });
+  }
+
+  function commitActivePreviewTextEdit(): void {
+    if (!session.isPreviewActive()) return;
+    previewTextEditor.commitActiveEdit({ syncAfter: false });
   }
 
   function applyDocumentToEditor(

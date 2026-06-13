@@ -239,6 +239,38 @@ test('saves edits back to an opened writable Markdown file', async ({ page }) =>
   expect(write.text).toContain('Updated file body.');
 });
 
+test('saves focused preview text edits back to an opened writable Markdown file', async ({ page }) => {
+  await installWritableFileMock(page, {
+    name: 'focused-preview-file.md',
+    text: [
+      '---',
+      'title: Focused Preview File',
+      'description: File sync source',
+      'tags: file',
+      '---',
+      '',
+      'Original preview body.'
+    ].join('\n')
+  });
+  await openApp(page);
+
+  await page.locator('[data-open-editable-folder]').click();
+  await page.locator('[data-open-editable-file]').click();
+  await expect(page.locator('[data-save-state]')).toHaveText('Opened and syncing document');
+  await togglePreview(page);
+
+  const paragraph = page.locator('.preview-body p').first();
+  await paragraph.fill('Focused preview body.');
+  await expect(paragraph).toBeFocused();
+  await page.keyboard.press('ControlOrMeta+S');
+
+  await expect(page.locator('[data-save-state]')).toHaveText('Saved to file');
+  await expect.poll(() => getWritableFileWrites(page)).toHaveLength(1);
+  const [write] = await getWritableFileWrites(page);
+  expect(write.name).toBe('focused-preview-file.md');
+  expect(write.text).toContain('Focused preview body.');
+});
+
 test('saves edits back to the original path in an opened writable folder', async ({ page }) => {
   await installWritableFolderMock(page, {
     path: 'posts/folder-note.md',
