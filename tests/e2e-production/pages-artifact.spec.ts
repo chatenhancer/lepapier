@@ -103,7 +103,7 @@ test('ships a production PWA manifest with generated app icons', async ({ page }
   }
 });
 
-test('shows the real production service worker update prompt and preserves work after reload', async ({ page }) => {
+test('updates the real production service worker silently and preserves work after reload', async ({ page }) => {
   const originalServiceWorker = await readFile(editorServiceWorkerPath, 'utf8');
 
   try {
@@ -112,7 +112,7 @@ test('shows the real production service worker update prompt and preserves work 
 
     await page.reload();
     await expectEditorReady(page);
-    await expect(page.locator('[data-pwa-update]')).toBeHidden();
+    await expect(page.locator('[data-pwa-update]')).toHaveCount(0);
     await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
 
     await page.locator('[data-field="title"]').fill('Production PWA Draft');
@@ -121,7 +121,7 @@ test('shows the real production service worker update prompt and preserves work 
 
     await triggerProductionServiceWorkerUpdate(page, originalServiceWorker, 'preserve-work');
 
-    await expect(page.locator('[data-pwa-update]')).toBeVisible();
+    await expect(page.locator('[data-pwa-update]')).toHaveCount(0);
 
     await page.evaluate(() => {
       sessionStorage.removeItem('lepapier-production-update-reload');
@@ -130,7 +130,7 @@ test('shows the real production service worker update prompt and preserves work 
       }, { once: true });
     });
 
-    await page.locator('[data-pwa-update-reload]').click();
+    await page.reload();
     await page.waitForLoadState('load');
     await expectEditorReady(page);
     await expect(page.locator('[data-field="title"]')).toHaveValue('Production PWA Draft');
@@ -198,7 +198,11 @@ async function triggerProductionServiceWorkerUpdate(page: Page, serviceWorkerSou
   await page.evaluate(async () => {
     const registration = await navigator.serviceWorker.getRegistration();
     if (!registration) throw new Error('Service worker registration was unavailable.');
+    const controllerChanged = new Promise<void>((resolve) => {
+      navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true });
+    });
     await registration.update();
+    await controllerChanged;
   });
 }
 
