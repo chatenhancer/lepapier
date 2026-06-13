@@ -14,18 +14,11 @@ if (!bumpTypes.has(bumpType)) {
 }
 
 const packageJson = await readJson(packageJsonPath);
-const packageLock = await readJson(packageLockPath);
 const currentVersion = parseVersion(packageJson.version);
 const nextVersion = formatVersion(bumpVersion(currentVersion, bumpType));
 
-packageJson.version = nextVersion;
-packageLock.version = nextVersion;
-if (packageLock.packages?.['']) {
-  packageLock.packages[''].version = nextVersion;
-}
-
-await writeJson(packageJsonPath, packageJson);
-await writeJson(packageLockPath, packageLock);
+await updateVersionFields(packageJsonPath, nextVersion, 1);
+await updateVersionFields(packageLockPath, nextVersion, 2);
 
 console.log(`Bumped version ${formatVersion(currentVersion)} -> ${nextVersion}.`);
 console.log('Updated package.json and package-lock.json.');
@@ -34,8 +27,22 @@ async function readJson(filePath) {
   return JSON.parse(await readFile(filePath, 'utf8'));
 }
 
-async function writeJson(filePath, value) {
-  await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`);
+async function updateVersionFields(filePath, version, expectedCount) {
+  let count = 0;
+  const source = await readFile(filePath, 'utf8');
+  const updated = source.replace(
+    /^(\s*"version"\s*:\s*")\d+\.\d+\.\d+(")/gm,
+    (match, prefix, suffix) => {
+      count += 1;
+      return count <= expectedCount ? `${prefix}${version}${suffix}` : match;
+    }
+  );
+
+  if (count < expectedCount) {
+    throw new Error(`Expected at least ${expectedCount} version field(s) in ${path.relative(root, filePath)}, found ${count}.`);
+  }
+
+  await writeFile(filePath, updated);
 }
 
 function parseVersion(value) {
