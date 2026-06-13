@@ -15,6 +15,7 @@
     "pages:build": "npm run pages:build:release",
     "pages:build:docs": "npm run docs:build",
     "pages:build:release": "npm run build && npm run docs:build && node scripts/copy-editor-build.mjs",
+    "version:bump": "node scripts/bump-version.mjs",
     "release:validate-tag": "node scripts/validate-release-tag.mjs",
     "release:zip": "node scripts/create-release-zip.mjs",
     "check": "tsc --noEmit",

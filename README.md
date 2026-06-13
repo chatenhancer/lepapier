@@ -156,7 +156,7 @@ npm run pages:build
 
 ## Release
 
-1. Update `version` in `package.json`.
+1. Run `npm run version:bump -- patch`, `npm run version:bump -- minor`, or `npm run version:bump -- major`.
 2. Run `npm run verify`.
 3. Commit the version bump and create a tag such as `v0.1.2`.
 4. Push the commit and tag.
