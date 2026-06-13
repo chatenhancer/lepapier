@@ -158,8 +158,8 @@ npm run pages:build
 
 1. Run `npm run version:bump -- patch`, `npm run version:bump -- minor`, or `npm run version:bump -- major`.
 2. Run `npm run verify`.
-3. Commit the version bump and create a tag such as `v0.1.2`.
-4. Push the commit and tag.
+3. Commit the version bump.
+4. Run `npm run release:tag`.
 
 The release workflow validates exact `vX.Y.Z` tags against `package.json`, creates the release zip, attaches it to a GitHub Release, and deploys the tagged app to `https://lepapier.app/editor/`.
 
