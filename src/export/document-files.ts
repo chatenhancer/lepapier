@@ -1,9 +1,7 @@
 import {
   buildDocumentMarkdown,
   createEditableFolderAssetPathMap,
-  createExportAssetPathMap,
   dedupeFolderName,
-  getMappedAssetPath,
   getDocumentFolderName,
   getDocumentMarkdownPath,
   getPathBasename,
@@ -35,6 +33,7 @@ export interface DocumentCollectionZipFilesOptions {
 
 export interface EditableFolderFilesOptions {
   documentRecord: DocumentRecord;
+  randomizeMediaNames?: boolean;
   readAssetData: ReadAssetData;
   resolveAssets: ResolveDocumentAssets;
 }
@@ -54,19 +53,23 @@ export async function createDocumentZipFilesForDocument({
   resolveAssets
 }: DocumentZipFilesOptions): Promise<ZipFileEntry[]> {
   const assetFiles = await resolveAssets([documentRecord]);
-  const assetPathMap = createExportAssetPathMap(assetFiles, {
-    randomize: randomizeMediaNames
+  const getAssetData = createCachedAssetDataReader(readAssetData);
+  const assetOutputPathMap = await createDocumentZipAssetOutputPathMap(assetFiles, {
+    randomizeMediaNames,
+    readAssetData: getAssetData
   });
   const files: ZipFileEntry[] = [{
-    data: textEncoder.encode(buildDocumentMarkdown({ assetPathMap, documentRecord })),
+    data: textEncoder.encode(buildDocumentMarkdown({
+      assetPathMap: createDocumentZipAssetPathMap(assetFiles, assetOutputPathMap),
+      documentRecord
+    })),
     path: `${folderName}/index.md`
   }];
 
   for (const asset of assetFiles) {
-    const mappedPath = getMappedAssetPath(asset.path, assetPathMap);
-    const assetPath = normalizeDocumentAssetPath(mappedPath);
+    const assetPath = assetOutputPathMap.get(asset) || asset.name;
     files.push({
-      data: await readAssetData(asset),
+      data: await getAssetData(asset),
       path: `${folderName}/${assetPath}`
     });
   }
@@ -105,6 +108,7 @@ export async function createPortableDocumentFiles({
   const usedMarkdownPaths = new Set<string>();
   const usedAssetPaths = new Set<string>();
   const assignedAssetPaths = new Map<string, string>();
+  const getAssetData = createCachedAssetDataReader(readAssetData);
   const files: ZipFileEntry[] = [];
 
   for (const documentRecord of documentRecords) {
@@ -123,10 +127,11 @@ export async function createPortableDocumentFiles({
       continue;
     }
 
-    const assetOutputPathMap = createPortableAssetOutputPathMap(assetFiles, {
+    const assetOutputPathMap = await createPortableAssetOutputPathMap(assetFiles, {
       assignedAssetPaths,
       markdownPath,
       randomizeMediaNames,
+      readAssetData: getAssetData,
       usedAssetPaths,
       useSourcePaths: documentRecord.source?.mode === 'folder' || documentRecord.source?.mode === 'editable-folder'
     });
@@ -143,7 +148,7 @@ export async function createPortableDocumentFiles({
       const assetPath = assetOutputPathMap.get(asset);
       if (!assetPath) continue;
       files.push({
-        data: await readAssetData(asset),
+        data: await getAssetData(asset),
         path: assetPath
       });
     }
@@ -154,12 +159,20 @@ export async function createPortableDocumentFiles({
 
 export async function createEditableFolderDocumentFiles({
   documentRecord,
+  randomizeMediaNames = false,
   readAssetData,
   resolveAssets
 }: EditableFolderFilesOptions): Promise<ZipFileEntry[]> {
   const assetFiles = await resolveAssets([documentRecord]);
   const markdownPath = getDocumentMarkdownPath(documentRecord);
-  const assetPathMap = createEditableFolderAssetPathMap(assetFiles, markdownPath);
+  const getAssetData = createCachedAssetDataReader(readAssetData);
+  const assetOutputPathMap = await createEditableFolderAssetOutputPathMap(assetFiles, {
+    randomizeMediaNames,
+    readAssetData: getAssetData
+  });
+  const assetPathMap = createEditableFolderAssetPathMap(assetFiles, markdownPath, {
+    assetOutputPathMap
+  });
   const files: ZipFileEntry[] = [{
     data: textEncoder.encode(buildDocumentMarkdown({ assetPathMap, documentRecord })),
     path: markdownPath
@@ -167,8 +180,8 @@ export async function createEditableFolderDocumentFiles({
 
   for (const asset of assetFiles) {
     files.push({
-      data: await readAssetData(asset),
-      path: normalizeDocumentAssetPath(asset.sourcePath || asset.path)
+      data: await getAssetData(asset),
+      path: assetOutputPathMap.get(asset) || normalizeDocumentAssetPath(asset.sourcePath || asset.path)
     });
   }
 
@@ -194,22 +207,24 @@ async function readFileAssetData(asset: MediaAsset): Promise<Uint8Array<ArrayBuf
   return new Uint8Array(await asset.file.arrayBuffer());
 }
 
-function createPortableAssetOutputPathMap(
+async function createPortableAssetOutputPathMap(
   assets: MediaAsset[],
   {
     assignedAssetPaths,
     markdownPath,
     randomizeMediaNames,
+    readAssetData,
     usedAssetPaths,
     useSourcePaths
   }: {
     assignedAssetPaths: Map<string, string>;
     markdownPath: string;
     randomizeMediaNames: boolean;
+    readAssetData: ReadAssetData;
     usedAssetPaths: Set<string>;
     useSourcePaths: boolean;
   }
-): Map<MediaAsset, string> {
+): Promise<Map<MediaAsset, string>> {
   const map = new Map<MediaAsset, string>();
   const markdownBase = getFileStem(getPathBasename(markdownPath)) || 'document';
   const assetDirectory = normalizeDocumentAssetPath(`${getPathDirectory(markdownPath)}/${markdownBase}-assets`);
@@ -224,9 +239,11 @@ function createPortableAssetOutputPathMap(
     }
 
     const sourcePath = normalizeDocumentAssetPath(asset.sourcePath);
-    const preferredPath = useSourcePaths && sourcePath
+    const preferredPath = randomizeMediaNames
+      ? normalizeDocumentAssetPath(`${assetDirectory}/${await createContentHashAssetFileName(asset.name, await readAssetData(asset), usedNames)}`)
+      : useSourcePaths && sourcePath
       ? sourcePath
-      : normalizeDocumentAssetPath(`${assetDirectory}/${getPortableMediaFileName(asset, randomizeMediaNames, usedNames)}`);
+      : normalizeDocumentAssetPath(`${assetDirectory}/${getOriginalAssetFileName(asset, usedNames)}`);
     const outputPath = dedupeFilePath(preferredPath || asset.name, usedAssetPaths);
     usedAssetPaths.add(outputPath);
     assignedAssetPaths.set(assetKey, outputPath);
@@ -238,6 +255,76 @@ function createPortableAssetOutputPathMap(
 
 function getAssetOutputKey(asset: MediaAsset): string {
   return normalizeDocumentAssetPath(asset.sourcePath || asset.path || asset.name);
+}
+
+async function createDocumentZipAssetOutputPathMap(
+  assets: MediaAsset[],
+  {
+    randomizeMediaNames,
+    readAssetData
+  }: {
+    randomizeMediaNames: boolean;
+    readAssetData: ReadAssetData;
+  }
+): Promise<Map<MediaAsset, string>> {
+  const map = new Map<MediaAsset, string>();
+  const usedNames = new Set<string>();
+
+  for (const asset of assets) {
+    const fileName = randomizeMediaNames
+      ? await createContentHashAssetFileName(asset.name, await readAssetData(asset), usedNames)
+      : getOriginalAssetFileName(asset, usedNames);
+    usedNames.add(fileName);
+    map.set(asset, fileName);
+  }
+
+  return map;
+}
+
+function createDocumentZipAssetPathMap(
+  assets: MediaAsset[],
+  assetOutputPathMap: Map<MediaAsset, string>
+): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const asset of assets) {
+    const outputPath = assetOutputPathMap.get(asset);
+    if (!outputPath) continue;
+    addAssetPathAliases(map, asset, `./${outputPath}`);
+  }
+  return map;
+}
+
+async function createEditableFolderAssetOutputPathMap(
+  assets: MediaAsset[],
+  {
+    randomizeMediaNames,
+    readAssetData
+  }: {
+    randomizeMediaNames: boolean;
+    readAssetData: ReadAssetData;
+  }
+): Promise<Map<MediaAsset, string>> {
+  const map = new Map<MediaAsset, string>();
+  const usedNames = new Set<string>();
+  const usedPaths = new Set<string>();
+
+  for (const asset of assets) {
+    const sourcePath = normalizeDocumentAssetPath(asset.sourcePath || asset.path || asset.name);
+    if (!randomizeMediaNames) {
+      map.set(asset, sourcePath);
+      continue;
+    }
+
+    const directory = getPathDirectory(sourcePath);
+    const randomizedName = await createContentHashAssetFileName(asset.name, await readAssetData(asset), usedNames);
+    const randomizedPath = normalizeDocumentAssetPath(`${directory}/${randomizedName}`);
+    const outputPath = dedupeFilePath(randomizedPath, usedPaths);
+    usedNames.add(getPathBasename(outputPath));
+    usedPaths.add(outputPath);
+    map.set(asset, outputPath);
+  }
+
+  return map;
 }
 
 function createPortableAssetPathMap(
@@ -299,25 +386,36 @@ function dedupeFilePath(path: string, usedPaths: Set<string>): string {
   return candidate;
 }
 
-function getPortableMediaFileName(asset: MediaAsset, randomizeMediaNames: boolean, usedNames: Set<string>): string {
-  const fileName = randomizeMediaNames ? createRandomAssetFileName(asset.name, usedNames) : asset.name;
-  const deduped = dedupeFileName(fileName, Array.from(usedNames));
+function getOriginalAssetFileName(asset: MediaAsset, usedNames: Set<string>): string {
+  const deduped = dedupeFileName(asset.name, Array.from(usedNames));
   usedNames.add(deduped);
   return deduped;
 }
 
-function createRandomAssetFileName(fileName: string, usedNames: Set<string>): string {
-  let name = '';
-  do {
-    name = `${createShortRandomId()}${getFileExtension(fileName)}`;
-  } while (usedNames.has(name));
-  return name;
+async function createContentHashAssetFileName(
+  fileName: string,
+  bytes: Uint8Array<ArrayBuffer>,
+  usedNames: Set<string>
+): Promise<string> {
+  const name = `${(await createSha256Hex(bytes)).slice(0, 16)}${getFileExtension(fileName)}`;
+  return dedupeFileName(name, Array.from(usedNames));
 }
 
-function createShortRandomId(): string {
-  const bytes = new Uint8Array(8);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+async function createSha256Hex(bytes: Uint8Array<ArrayBuffer>): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+function createCachedAssetDataReader(readAssetData: ReadAssetData): ReadAssetData {
+  const cache = new Map<MediaAsset, Promise<Uint8Array<ArrayBuffer>>>();
+  return async (asset) => {
+    const cached = cache.get(asset);
+    if (cached) return await cached;
+
+    const dataPromise = readAssetData(asset);
+    cache.set(asset, dataPromise);
+    return await dataPromise;
+  };
 }
 
 function getFileStem(fileName: string): string {

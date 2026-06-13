@@ -1,8 +1,6 @@
 import type { MediaAsset, DocumentRecord } from '../shared/types';
 import { getToday } from '../shared/date';
 import {
-  dedupeFileName,
-  getFileExtension,
   parseTags,
   quoteYaml,
   slugify
@@ -88,26 +86,15 @@ export function dedupeFolderName(folderName: string, usedFolders: Set<string>): 
   return candidate;
 }
 
-export function createExportAssetPathMap(
+export function createEditableFolderAssetPathMap(
   assets: MediaAsset[],
-  { randomize = false }: { randomize?: boolean } = {}
+  markdownPath = 'index.md',
+  { assetOutputPathMap = new Map<MediaAsset, string>() }: { assetOutputPathMap?: Map<MediaAsset, string> } = {}
 ): AssetPathMap {
-  const localPathMap = randomize ? createRandomizedAssetPathMap(assets) : new Map<string, string>();
-  const map: AssetPathMap = new Map();
-
-  for (const asset of assets) {
-    const fileName = localPathMap.get(asset.path) || asset.name;
-    addAssetPathAliases(map, asset, `./${fileName}`);
-  }
-
-  return map;
-}
-
-export function createEditableFolderAssetPathMap(assets: MediaAsset[], markdownPath = 'index.md'): AssetPathMap {
   const map: AssetPathMap = new Map();
   for (const asset of assets) {
-    const sourcePath = normalizeDocumentAssetPath(asset.sourcePath || asset.path);
-    addAssetPathAliases(map, asset, getRelativeMarkdownPath(markdownPath, sourcePath));
+    const outputPath = normalizeDocumentAssetPath(assetOutputPathMap.get(asset) || asset.sourcePath || asset.path);
+    addAssetPathAliases(map, asset, getRelativeMarkdownPath(markdownPath, outputPath));
   }
   return map;
 }
@@ -151,17 +138,6 @@ export function isImportableAssetReference(path: string): boolean {
   return Boolean(trimmed)
     && !/^(?:[a-z][a-z0-9+.-]*:)?\/\//i.test(trimmed)
     && !/^(?:data|mailto|tel):/i.test(trimmed);
-}
-
-function createRandomizedAssetPathMap(assets: MediaAsset[]): Map<string, string> {
-  const map = new Map<string, string>();
-  const usedNames = new Set<string>();
-  for (const asset of assets) {
-    const randomizedName = createRandomizedAssetFileName(asset.name, usedNames);
-    map.set(asset.path, randomizedName);
-    usedNames.add(randomizedName);
-  }
-  return map;
 }
 
 function addAssetPathAliases(map: AssetPathMap, asset: MediaAsset, outputPath: string): void {
@@ -230,19 +206,4 @@ function normalizePathSegments(path: string): string {
     output.push(part);
   }
   return output.join('/');
-}
-
-function createRandomizedAssetFileName(fileName: string, usedNames: Set<string>): string {
-  const extension = getFileExtension(fileName);
-  let name = '';
-  do {
-    name = `${createShortRandomId()}${extension}`;
-  } while (usedNames.has(name));
-  return dedupeFileName(name, Array.from(usedNames));
-}
-
-function createShortRandomId(): string {
-  const bytes = new Uint8Array(8);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }

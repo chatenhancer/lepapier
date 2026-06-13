@@ -409,7 +409,10 @@ export function startEditorController(): void {
     writeDocumentToEditableFolder: (documentRecord, directoryHandle) => editableFolderFiles.writeDocumentToEditableFolder(
       documentRecord,
       directoryHandle,
-      exportAssetWorkflow.getUniqueAssetFiles
+      exportAssetWorkflow.getUniqueAssetFiles,
+      {
+        randomizeMediaNames: randomizeMediaNamesInput.checked
+      }
     )
   });
 

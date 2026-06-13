@@ -32,7 +32,8 @@ export interface EditorEditableFolderFiles {
   writeDocumentToEditableFolder(
     documentRecord: DocumentRecord,
     directoryHandle: FileSystemDirectoryHandle,
-    resolveAssets: (documentRecords: DocumentRecord[]) => Promise<MediaAsset[]>
+    resolveAssets: (documentRecords: DocumentRecord[]) => Promise<MediaAsset[]>,
+    options?: { randomizeMediaNames?: boolean }
   ): Promise<void>;
   writeDocumentToEditableFile(
     documentRecord: DocumentRecord,
@@ -93,10 +94,12 @@ export function createEditorEditableFolderFiles({
   const createEditableFolderFiles = async (
     documentRecord: DocumentRecord,
     directoryHandle: FileSystemDirectoryHandle | undefined,
-    resolveAssets: (documentRecords: DocumentRecord[]) => Promise<MediaAsset[]>
+    resolveAssets: (documentRecords: DocumentRecord[]) => Promise<MediaAsset[]>,
+    { randomizeMediaNames = false }: { randomizeMediaNames?: boolean } = {}
   ) => {
     return await createEditableFolderDocumentFiles({
       documentRecord,
+      randomizeMediaNames,
       readAssetData: (asset) => readAssetForEditableFolder(asset, directoryHandle),
       resolveAssets
     });
@@ -113,9 +116,12 @@ export function createEditorEditableFolderFiles({
   const writeDocumentToEditableFolder = async (
     documentRecord: DocumentRecord,
     directoryHandle: FileSystemDirectoryHandle,
-    resolveAssets: (documentRecords: DocumentRecord[]) => Promise<MediaAsset[]>
+    resolveAssets: (documentRecords: DocumentRecord[]) => Promise<MediaAsset[]>,
+    { randomizeMediaNames = false }: { randomizeMediaNames?: boolean } = {}
   ): Promise<void> => {
-    const files = await createEditableFolderFiles(documentRecord, directoryHandle, resolveAssets);
+    const files = await createEditableFolderFiles(documentRecord, directoryHandle, resolveAssets, {
+      randomizeMediaNames
+    });
 
     for (const file of files) {
       try {

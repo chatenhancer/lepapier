@@ -32,6 +32,27 @@ describe('document export file assembly', () => {
     expect(decoder.decode(files[0].data)).toContain('![Hero](./hero.png)');
   });
 
+  it('randomizes document zip media filenames from content hashes', async () => {
+    const asset = createAsset({ name: 'hero.png', path: 'hero.png' });
+    const files = await createDocumentZipFilesForDocument({
+      documentRecord: createDocument({
+        body: '![Hero](hero.png)',
+        slug: 'hello',
+        title: 'Hello'
+      }),
+      folderName: '2026-06-11-hello',
+      randomizeMediaNames: true,
+      readAssetData: async () => new Uint8Array([9]),
+      resolveAssets: async () => [asset]
+    });
+
+    expect(files.map((file) => file.path)).toEqual([
+      '2026-06-11-hello/index.md',
+      '2026-06-11-hello/2b4c342f5433ebe5.png'
+    ]);
+    expect(decoder.decode(files[0].data)).toContain('![Hero](./2b4c342f5433ebe5.png)');
+  });
+
   it('deduplicates collection folder names', async () => {
     const documentRecord = createDocument({ slug: 'same', title: 'Same' });
     const files = await createDocumentCollectionZipFiles({
@@ -97,6 +118,91 @@ describe('document export file assembly', () => {
 
     expect(files.map((file) => file.path)).toEqual(['posts/note.md', 'assets/hero.png']);
     expect(decoder.decode(files[0].data)).toContain('![Hero](../assets/hero.png)');
+  });
+
+  it('randomizes editable folder media filenames when requested', async () => {
+    const hashPrefix = '2b4c342f5433ebe5';
+    const asset = createAsset({
+      name: 'hero.png',
+      path: 'assets/hero.png',
+      sourcePath: 'assets/hero.png'
+    });
+    const sameContentAsset = createAsset({
+      name: 'different.png',
+      path: 'different.png',
+      sourcePath: 'assets/different.png'
+    });
+    const files = await createEditableFolderDocumentFiles({
+      documentRecord: createDocument(
+        {
+          body: '![Hero](assets/hero.png)'
+        },
+        {
+          source: {
+            markdownPath: 'posts/note.md',
+            mode: 'editable-folder'
+          }
+        }
+      ),
+      randomizeMediaNames: true,
+      readAssetData: async () => new Uint8Array([9]),
+      resolveAssets: async () => [asset]
+    });
+    const mediaFile = files.find((file) => file.path !== 'posts/note.md');
+    const secondFiles = await createEditableFolderDocumentFiles({
+      documentRecord: createDocument(
+        {
+          body: '![Hero](different.png)'
+        },
+        {
+          source: {
+            markdownPath: 'posts/note.md',
+            mode: 'editable-folder'
+          }
+        }
+      ),
+      randomizeMediaNames: true,
+      readAssetData: async () => new Uint8Array([9]),
+      resolveAssets: async () => [sameContentAsset]
+    });
+    const secondMediaFile = secondFiles.find((file) => file.path !== 'posts/note.md');
+
+    expect(mediaFile?.path).toBe(`assets/${hashPrefix}.png`);
+    expect(mediaFile?.path).not.toBe('assets/hero.png');
+    expect(secondMediaFile?.path).toBe(mediaFile?.path);
+    expect(decoder.decode(files[0].data)).toContain(`![Hero](../assets/${hashPrefix}.png)`);
+  });
+
+  it('randomizes portable bundle media filenames from content hashes', async () => {
+    const asset = createAsset({
+      name: 'hero.png',
+      path: 'assets/hero.png',
+      sourcePath: 'source-assets/hero.png'
+    });
+    const files = await createPortableDocumentFiles({
+      documentRecords: [createDocument(
+        {
+          body: '![Hero](assets/hero.png)',
+          slug: 'portable',
+          title: 'Portable'
+        },
+        {
+          source: {
+            markdownPath: 'posts/portable.md',
+            mode: 'folder'
+          }
+        }
+      )],
+      randomizeMediaNames: true,
+      readAssetData: async () => new Uint8Array([9]),
+      resolveAssets: async () => [asset]
+    });
+    const markdownFile = files.find((file) => file.path === 'posts/portable.md');
+    const mediaFile = files.find((file) => file.path !== 'posts/portable.md');
+
+    expect(mediaFile?.path).toBe('posts/portable-assets/2b4c342f5433ebe5.png');
+    expect(mediaFile?.path).not.toBe('source-assets/hero.png');
+    expect(decoder.decode(markdownFile?.data || new Uint8Array())).toContain('![Hero](./portable-assets/2b4c342f5433ebe5.png)');
   });
 
   it('creates a portable single markdown file when there are no assets', async () => {

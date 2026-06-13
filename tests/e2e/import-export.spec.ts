@@ -146,6 +146,47 @@ test('saves editable folder Markdown and referenced assets back to their source 
   expect(assetWrite?.text).toBe('folder hero bytes');
 });
 
+test('randomizes editable folder synced media filenames when enabled', async ({ page }) => {
+  await installWritableFolderMock(page, {
+    path: 'posts/folder-randomized-assets.md',
+    text: [
+      '---',
+      'title: Folder Randomized Assets',
+      '---',
+      '',
+      '![Hero](assets/hero.png)',
+      '',
+      'Folder randomized asset body.'
+    ].join('\n'),
+    files: [{
+      path: 'posts/assets/hero.png',
+      text: 'folder hero bytes',
+      type: 'image/png'
+    }]
+  });
+  await openApp(page);
+
+  await page.locator('[data-open-editable-folder]').click();
+  await page.locator('[data-open-editable-folder-action]').click();
+  await expect(page.locator('[data-save-state]')).toHaveText('Opened and syncing document');
+
+  await page.locator('[data-randomize-media-names]').check();
+  await bodyInput(page).focus();
+  await page.keyboard.press('ControlOrMeta+S');
+
+  await expect(page.locator('[data-save-state]')).toHaveText('Saved to folder');
+  await expect.poll(() => getWritableFolderWrites(page)).toHaveLength(2);
+  const writes = await getWritableFolderWrites(page);
+  const markdownWrite = writes.find((write) => write.path === 'posts/folder-randomized-assets.md');
+  const assetWrite = writes.find((write) => write.path !== 'posts/folder-randomized-assets.md');
+
+  expect(assetWrite?.path).toBe('posts/assets/f4defb157b92bfeb.png');
+  expect(assetWrite?.path).not.toBe('posts/assets/hero.png');
+  expect(markdownWrite?.text).toContain('![Hero](./assets/f4defb157b92bfeb.png)');
+  expect(markdownWrite?.text).not.toContain('assets/hero.png)');
+  expect(assetWrite?.text).toBe('folder hero bytes');
+});
+
 test('downloads only selected documents in a bundle', async ({ page }) => {
   await field(page, 'title').fill('Export First');
   await bodyInput(page).fill('First export body.');
@@ -193,7 +234,7 @@ test('randomizes exported media filenames while keeping Markdown references vali
   const mediaEntry = Array.from(entries.keys()).find((path) => !path.endsWith('.md'));
 
   expect(markdownEntry).toBeTruthy();
-  expect(mediaEntry).toMatch(/randomized-media-assets\/[a-f0-9]{16}\.png$/);
+  expect(mediaEntry).toMatch(/^\d{4}-\d{2}-\d{2}-randomized-media-assets\/8391b9fe8155cbe6\.png$/);
   expect(markdownEntry?.[1]).toContain(`(./${mediaEntry})`);
   expect(markdownEntry?.[1]).not.toContain('(hero.png)');
 });
