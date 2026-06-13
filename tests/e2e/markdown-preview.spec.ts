@@ -195,7 +195,8 @@ test('adds preview paragraph breaks without removing inline formatting', async (
   const paragraph = page.locator('.preview-body p').first();
   await placeEditableCursorAtEnd(paragraph);
   await paragraph.press('Enter');
-  await page.keyboard.type('New paragraph.');
+  await page.keyboard.insertText('New paragraph.');
+  await expect(paragraph).toContainText('New paragraph.');
   await page.locator('[data-save-state]').click();
 
   await expect(bodyInput(page)).toHaveValue('This keeps *italic* text.\n\nNew paragraph.');

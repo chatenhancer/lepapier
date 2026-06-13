@@ -277,12 +277,7 @@ export function setupPreviewTextEditor({
     const activeEditable = activeElement instanceof Element
       ? activeElement.closest<HTMLElement>('[data-preview-editable="true"]')
       : null;
-    if (activeEditable && preview.contains(activeEditable)) return activeEditable;
-
-    const selection = preview.ownerDocument.defaultView?.getSelection();
-    const anchorElement = getNodeElement(selection?.anchorNode || null);
-    const selectedEditable = anchorElement?.closest<HTMLElement>('[data-preview-editable="true"]') || null;
-    return selectedEditable && preview.contains(selectedEditable) ? selectedEditable : null;
+    return activeEditable && preview.contains(activeEditable) ? activeEditable : null;
   };
 
   const setActiveTableCell = (element: HTMLElement) => {
@@ -431,7 +426,6 @@ export function setupPreviewTextEditor({
         updatePreviewMarkdownText(element);
       };
       element.addEventListener('blur', commitElement);
-      element.addEventListener('focusout', commitElement);
     }
   };
 
